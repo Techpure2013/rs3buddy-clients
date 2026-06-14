@@ -1,0 +1,57 @@
+plugins {
+    id "java"
+    id "org.jsonschema2pojo" version "1.3.3"
+}
+
+group = "com.rs3buddy"
+version = "0.1.0"
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(17) }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.17.1"
+
+    testImplementation platform("org.junit:junit-bom:5.10.2")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test { useJUnitPlatform() }
+
+// jsonschema2pojo: generate model classes from the shared schema.
+// Output is also committed (scripts/gen-models-java.mjs) so consumers don't run
+// codegen; this block lets `gradle build` regenerate while iterating.
+jsonSchema2Pojo {
+    source = files("${rootDir}/../../schema/rs3buddy.schema.json")
+    // Generate into an OFF-source-set dir. The models are committed to
+    // src/main/java/.../models (synced by scripts/gen-models-java.mjs), which is
+    // the sole compile source. Generating into the default build/generated-sources
+    // dir would add it to the main source set and collide with the committed copies
+    // (duplicate class errors). So we target a sibling dir and rely on the gen
+    // script to sync into src/.
+    targetDirectory = file("${buildDir}/js2p-staging")
+    targetPackage = "com.rs3buddy.models"
+    sourceType = "jsonschema"
+    includeAdditionalProperties = false
+    includeJsr305Annotations = false
+    generateBuilders = false
+    useTitleAsClassname = true
+    includeGetters = true
+    includeSetters = false
+    annotationStyle = "jackson2"
+}
+
+// The committed models in src/main/java are authoritative. The plugin adds its
+// targetDirectory to the main source set; since we target an off-default staging
+// dir AND the gen script syncs into src/, strip the staging dir back out of the
+// source set so the committed copies are the sole compile input (no duplicate
+// classes). The generateJsonSchema2Pojo task still runs on demand for the gen script.
+afterEvaluate {
+    sourceSets.main.java.srcDirs = sourceSets.main.java.srcDirs.findAll { dir ->
+        !dir.path.contains("js2p-staging") && !dir.path.contains("generated-sources")
+    }
+}

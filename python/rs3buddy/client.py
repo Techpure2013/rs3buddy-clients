@@ -1,0 +1,189 @@
+"""RS3Buddy — typed Python client. One method per HTTP route."""
+from __future__ import annotations
+
+from typing import Any, Optional
+from urllib.parse import urlencode
+
+from .transport import Transport
+from .models import (
+    Position, ShaderInfo, TextureInfo, SceneSnapshot, ChatReadResult,
+    DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult,
+)
+
+
+def _q(**params: Any) -> str:
+    pairs = {k: v for k, v in params.items() if v is not None}
+    return ("?" + urlencode(pairs)) if pairs else ""
+
+
+class _ChatAPI:
+    """Chatbox reader namespace, reached via RS3Buddy.chat."""
+
+    def __init__(self, t: Transport) -> None:
+        self._t = t
+
+    def read(
+        self,
+        x0: Optional[int] = None,
+        y0: Optional[int] = None,
+        x1: Optional[int] = None,
+        y1: Optional[int] = None,
+    ) -> ChatReadResult:
+        """Read the chatbox as structured lines + per-glyph colour.
+
+        Thin wrapper over GET /api/chat; the heavy work (frame + screen
+        capture, glyph recognition, line grouping, colour sampling) runs
+        server-side. Pass x0/y0/x1/y1 (window px) to override the default
+        bottom-left chatbox region. Returns:
+            { "ok": True, "lineCount": int,
+              "lines": [ { "y": int, "text": str, "color": [r, g, b],
+                           "glyphs": [ { "char": str, "x": int,
+                                         "color": [r, g, b] } ] } ] }
+        Lines are ordered top-to-bottom by y.
+        """
+        return self._t.request("GET", "/api/chat" + _q(x0=x0, y0=y0, x1=x1, y1=y1))
+
+
+class RS3Buddy:
+    def __init__(
+        self,
+        base_url: Optional[str] = None,
+        client_name: Optional[str] = None,
+        timeout: float = 5.0,
+    ) -> None:
+        self._t = Transport(base_url=base_url, client_name=client_name, timeout=timeout)
+        self.chat = _ChatAPI(self._t)
+
+    @classmethod
+    def connect(
+        cls,
+        base_url: Optional[str] = None,
+        client_name: Optional[str] = None,
+        timeout: float = 5.0,
+    ) -> "RS3Buddy":
+        """Connect to the running SDK server.
+
+        With no base_url, auto-discovers the server from the launcher's config
+        (rs3buddy.json under %APPDATA%/rs3buddy, then $RS3BUDDY_CONFIG / the cwd).
+        The launcher must be running (native injected into RS3 -> SDK server up).
+        Pass base_url only to target a specific server.
+        """
+        return cls(base_url=base_url, client_name=client_name, timeout=timeout)
+
+    @property
+    def base_url(self) -> str:
+        return self._t.base_url
+
+    def close(self) -> None:
+        self._t.close()
+
+    # ── Player (both hit GET /api/player; ride the native passive tap) ──
+    def get_player(self) -> Optional[Position]:
+        """Acquire the player position (cold call may take a frame or two)."""
+        return self._t.request("GET", "/api/player")
+
+    def update_player(self) -> Optional[Position]:
+        """Cheap refresh; None if not currently tracked -> call get_player() again."""
+        return self._t.request("GET", "/api/player")
+
+    def get_player_name(self) -> PlayerNameResult:
+        """The local player's name + title(s), recovered from the chat input prompt.
+
+        Opt-in; the name never appears in the chat feed itself. ``found`` is False
+        until the prompt has been seen at least once.
+        """
+        return self._t.request("GET", "/api/player/name")
+
+    # ── Status / window / heap ──
+    def get_status(self) -> Any: return self._t.request("GET", "/api/status")
+    def get_window(self) -> Any: return self._t.request("GET", "/api/window")
+    def get_heap(self) -> Any: return self._t.request("GET", "/api/heap")
+
+    # ── Capture / shaders / textures ──
+    def capture_frame(self, include_mesh: bool = False, include_texture_pixels: bool = False,
+                      shader_id: Optional[int] = None, mesh_id: Optional[int] = None,
+                      target_fbo: Optional[int] = None) -> FrameCaptureResult:
+        return self._t.request("GET", "/api/frame" + _q(
+            mesh="true" if include_mesh else None,
+            pixels="true" if include_texture_pixels else None,
+            shaderId=shader_id, meshId=mesh_id, targetFbo=target_fbo))
+    def get_shaders(self) -> list[ShaderInfo]: return self._t.request("GET", "/api/shaders")
+    def get_textures(self) -> list[TextureInfo]: return self._t.request("GET", "/api/textures")
+    def get_captured_textures(self) -> Any: return self._t.request("GET", "/api/captured-textures")
+    def refresh_captured_textures(self) -> Any: return self._t.request("POST", "/api/captured-textures/refresh")
+    def captured_textures_stats(self) -> Any: return self._t.request("GET", "/api/captured-textures/stats")
+    def clear_captured_textures(self) -> Any: return self._t.request("DELETE", "/api/captured-textures")
+    def get_captured_texture(self, id: int) -> Any: return self._t.request("GET", f"/api/captured-texture/{id}")
+    def read_texture(self, id: int, x: int = 0, y: int = 0, w: int = 0, h: int = 0) -> Any:
+        return self._t.request("GET", f"/api/texture/{id}" + _q(x=x, y=y, w=w, h=h))
+    def screen_capture(self) -> Any: return self._t.request("GET", "/api/screen-capture")
+    def get_glyphs_on_screen(self, **opts: int) -> Any: return self._t.request("GET", "/api/glyphs-on-screen" + _q(**opts))
+    def glyph_at_point(self, x: int, y: int, **opts: int) -> Any: return self._t.request("POST", "/api/glyph-at-point", {"x": x, "y": y, **opts})
+
+    # ── Scene ──
+    def get_scene(self) -> SceneSnapshot: return self._t.request("GET", "/api/scene")
+    def get_scene_player(self) -> Any: return self._t.request("GET", "/api/scene/player")
+    def get_npcs(self, radius: Optional[int] = None, floor: Optional[int] = None) -> Any: return self._t.request("GET", "/api/scene/npcs" + _q(radius=radius, floor=floor))
+    def get_scenery(self, radius: Optional[int] = None, floor: Optional[int] = None) -> Any: return self._t.request("GET", "/api/scene/scenery" + _q(radius=radius, floor=floor))
+    def get_floor_tiles(self, radius: Optional[int] = None, floor: Optional[int] = None) -> Any: return self._t.request("GET", "/api/scene/floor_tiles" + _q(radius=radius, floor=floor))
+    def get_water(self, radius: Optional[int] = None, floor: Optional[int] = None) -> Any: return self._t.request("GET", "/api/scene/water" + _q(radius=radius, floor=floor))
+    def get_entity_at(self, x: int, z: int, floor: Optional[int] = None) -> Any: return self._t.request("GET", "/api/scene/at" + _q(x=x, z=z, floor=floor))
+
+    # ── Draw / overlay ──
+    def draw_shape(self, shape: DrawItem) -> Any: return self._t.request("POST", "/api/draw/shape", shape)
+    def draw_scene(self, shapes: list[DrawItem]) -> Any: return self._t.request("POST", "/api/draw/scene", shapes)
+    def list_shapes(self) -> Any: return self._t.request("GET", "/api/draw")
+    def remove_shape(self, id: str) -> Any: return self._t.request("DELETE", f"/api/draw/{id}")
+    def clear_shapes(self, group: Optional[str] = None) -> Any: return self._t.request("DELETE", "/api/draw" + _q(group=group))
+
+    # ── Fonts ──
+    def list_fonts(self) -> Any:
+        """List the registered render/DRAW fonts (alias -> .ttf), NOT the recognition registry."""
+        return self._t.request("GET", "/api/fonts/registered")
+    def register_font(self, name: str, path: str) -> Any: return self._t.request("POST", "/api/fonts/register", {"name": name, "path": path})
+    def unregister_font(self, name: str) -> Any: return self._t.request("DELETE", f"/api/fonts/{name}")
+
+    # ── Sprites ──
+    def list_trained_sprites(self) -> Any: return self._t.request("GET", "/api/sprites/trained")
+    def save_trained_sprite(self, req: Any) -> Any: return self._t.request("POST", "/api/sprites/trained", req)
+    def delete_trained_sprite(self, name: str) -> Any: return self._t.request("DELETE", f"/api/sprites/trained/{name}")
+
+    # ── Atlas ──
+    def import_sprite_hash(self, req: Any) -> Any: return self._t.request("POST", "/api/atlas/import-spritehash", req)
+    def train_quad(self, req: Any) -> Any: return self._t.request("POST", "/api/atlas/train-quad", req)
+    def atlas_sync(self) -> Any: return self._t.request("POST", "/api/atlas/sync")
+    def atlas_sprites(self) -> Any: return self._t.request("GET", "/api/atlas/sprites")
+    def atlas_lookup(self, hash: int) -> Any: return self._t.request("GET", f"/api/atlas/lookup/{hash}")
+    def recognize_quads(self, quads: list[Any]) -> Any: return self._t.request("POST", "/api/atlas/recognize-quads", {"quads": quads})
+
+    # ── OCR ──
+    def match_text(self, req: Any) -> Any: return self._t.request("POST", "/api/match/text", req)
+    def match_region(self, req: Any) -> Any: return self._t.request("POST", "/api/match/region", req)
+
+    # ── Post-FX (fullscreen post-processing passes) ──
+    def add_post_fx(self, pass_: PostFxPassInput) -> Any:
+        """Register or replace a fullscreen post-FX pass; returns {"id": ...}."""
+        return self._t.request("POST", "/api/shaders/postfx", pass_)
+    def list_post_fx(self) -> list[PostFxPassInput]:
+        """All post-FX passes, in render order (ascending ``order``)."""
+        return self._t.request("GET", "/api/shaders/postfx")
+    def remove_post_fx(self, id: str) -> Any:
+        """Remove a post-FX pass; returns {"removed": bool}."""
+        return self._t.request("DELETE", f"/api/shaders/postfx/{id}")
+    def set_post_fx_enabled(self, id: str, enabled: bool) -> Any:
+        """Enable/disable a post-FX pass without removing it; returns {"ok": bool}."""
+        return self._t.request("POST", f"/api/shaders/postfx/{id}/enabled", {"enabled": enabled})
+
+    # ── Custom game-shader FX (replace RS3's own shaders, by type or hash) ──
+    def add_shader_fx(self, o: ShaderFxInput) -> Any:
+        """Register or replace a custom game-shader FX; returns {"id": ...}."""
+        return self._t.request("POST", "/api/shaders/fx", o)
+    def list_shader_fx(self) -> list[ShaderFxInput]:
+        """All active custom game-shader FX."""
+        return self._t.request("GET", "/api/shaders/fx")
+    def remove_shader_fx(self, id: str) -> Any:
+        """Remove a shader FX (that shader reverts to stock); returns {"removed": bool}."""
+        return self._t.request("DELETE", f"/api/shaders/fx/{id}")
+    def set_shader_fx_enabled(self, id: str, enabled: bool) -> Any:
+        """Enable/disable a shader FX without removing it; returns {"ok": bool}."""
+        return self._t.request("POST", f"/api/shaders/fx/{id}/enabled", {"enabled": enabled})

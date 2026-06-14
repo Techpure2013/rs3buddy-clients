@@ -1,0 +1,4 @@
+# Luau / Lua tooling artifacts
+luau_history.txt
+*.luac
+.luau/
