@@ -130,5 +130,51 @@ class RS3Buddy {
             x0: opts.x0, y0: opts.y0, x1: opts.x1, y1: opts.y1,
         })),
     };
+    // ── Status bars (HP / adrenaline / prayer / summoning) ──
+    /**
+     * Read the four status bars: each bar's current `value`, `max` (when the bar
+     * shows current/max), `found`, and the located `anchor` + scanned `region`.
+     * Thin wrapper over GET /api/bars; recognition runs server-side.
+     */
+    bars = {
+        read: () => this.t.request("GET", "/api/bars"),
+    };
+    // ── Ability bars (action bar slots) ──
+    /**
+     * Read the action bar(s): each slot's `name`, `rect`, cooldown
+     * (`onCooldown` / `cooldownText` / `cooldownSeconds`) and `usable` state.
+     * Thin wrapper over GET /api/abilities; recognition runs server-side.
+     */
+    abilities = {
+        read: () => this.t.request("GET", "/api/abilities"),
+    };
+    // ── Overlay UI ──
+    /**
+     * Overlay UI. Author the HUD as HTML + CSS and POST it; the server compiles it
+     * to the same widget engine the SDK renders (clicks / drag / scaling all work).
+     * Your app owns the state: poll `events()` for clicks (each event carries the
+     * clicked widget's `id`) and re-render by calling `html()` again.
+     */
+    ui = {
+        /** Render an HTML + CSS "page" to the overlay (replaces the current UI). POST /api/ui/html. */
+        html: (html, css) => this.t.request("POST", "/api/ui/html", { html, css: css ?? "" }),
+        /** Render a raw widget tree (`{ type, props, children }`) to the overlay. POST /api/ui. */
+        render: (tree) => this.t.request("POST", "/api/ui", tree),
+        /** Clear the overlay UI. DELETE /api/ui. */
+        clear: () => this.t.request("DELETE", "/api/ui"),
+        /** Drain queued interaction events (clicks / close / minimize); each `{ type, id, x, y }`. GET /api/ui/events. */
+        events: () => this.t.request("GET", "/api/ui/events"),
+        /** Configure auto display-scaling on hi-DPI / 4K. POST /api/ui/scaling. */
+        scaling: (opts) => this.t.request("POST", "/api/ui/scaling", opts),
+    };
+    // ── Sound (play a developer-supplied sound, host-side) ──
+    /**
+     * Play a sound through the desktop app. Pass either a host-side `file` path
+     * (or file:/data:/http(s): URL) OR inline base64 `bytes` (+ `mime`); `volume`
+     * is 0..1. Thin wrapper over POST /api/sound. Requires the desktop audio host.
+     */
+    sound = {
+        play: (opts) => this.t.request("POST", "/api/sound", opts),
+    };
 }
 exports.RS3Buddy = RS3Buddy;

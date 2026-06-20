@@ -1,11 +1,42 @@
 import { TransportOptions } from "./transport";
-import type { Position, CaptureOptions, ShaderInfo, TextureInfo, SceneSnapshot, ChatReadResult, DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult } from "./models";
+import type { Position, CaptureOptions, ShaderInfo, TextureInfo, SceneSnapshot, ChatReadResult, BarsReadResult, AbilitiesReadResult, DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult } from "./models";
 /** Optional chatbox region override (window px). */
 export interface ChatReadOptions {
     x0?: number;
     y0?: number;
     x1?: number;
     y1?: number;
+}
+/** A queued UI interaction event (click / close / minimize). */
+export interface UIEvent {
+    type: string;
+    id: string;
+    x: number;
+    y: number;
+}
+/** Response of GET /api/ui/events. */
+export interface UIEvents {
+    events: UIEvent[];
+}
+/** Auto display-scaling options (how big the UI is on hi-DPI / 4K). */
+export interface UIScalingOptions {
+    /** 1 = proportional (≈constant physical size); >1 = bigger on 4K (default 1.5). */
+    exponent?: number;
+    /** Explicit scale multiplier (overrides the exponent curve). */
+    scale?: number;
+    /** Reference window height the scaling is normalised against. */
+    baseHeight?: number;
+}
+/** Sound playback options: a host-side file path OR base64 bytes (+ mime). */
+export interface SoundPlayOptions {
+    /** Path to an audio file on the host (or a file:/data:/http(s): URL). */
+    file?: string;
+    /** Base64-encoded audio, played inline; pair with `mime`. */
+    bytes?: string;
+    /** MIME type for inline `bytes` (default "audio/wav"). */
+    mime?: string;
+    /** Playback volume 0..1 (default host volume). */
+    volume?: number;
 }
 export declare class RS3Buddy {
     private readonly t;
@@ -106,6 +137,48 @@ export declare class RS3Buddy {
      */
     readonly chat: {
         read: (opts?: ChatReadOptions) => Promise<ChatReadResult>;
+    };
+    /**
+     * Read the four status bars: each bar's current `value`, `max` (when the bar
+     * shows current/max), `found`, and the located `anchor` + scanned `region`.
+     * Thin wrapper over GET /api/bars; recognition runs server-side.
+     */
+    readonly bars: {
+        read: () => Promise<BarsReadResult>;
+    };
+    /**
+     * Read the action bar(s): each slot's `name`, `rect`, cooldown
+     * (`onCooldown` / `cooldownText` / `cooldownSeconds`) and `usable` state.
+     * Thin wrapper over GET /api/abilities; recognition runs server-side.
+     */
+    readonly abilities: {
+        read: () => Promise<AbilitiesReadResult>;
+    };
+    /**
+     * Overlay UI. Author the HUD as HTML + CSS and POST it; the server compiles it
+     * to the same widget engine the SDK renders (clicks / drag / scaling all work).
+     * Your app owns the state: poll `events()` for clicks (each event carries the
+     * clicked widget's `id`) and re-render by calling `html()` again.
+     */
+    readonly ui: {
+        /** Render an HTML + CSS "page" to the overlay (replaces the current UI). POST /api/ui/html. */
+        html: (html: string, css?: string) => Promise<unknown>;
+        /** Render a raw widget tree (`{ type, props, children }`) to the overlay. POST /api/ui. */
+        render: (tree: unknown) => Promise<unknown>;
+        /** Clear the overlay UI. DELETE /api/ui. */
+        clear: () => Promise<unknown>;
+        /** Drain queued interaction events (clicks / close / minimize); each `{ type, id, x, y }`. GET /api/ui/events. */
+        events: () => Promise<UIEvents>;
+        /** Configure auto display-scaling on hi-DPI / 4K. POST /api/ui/scaling. */
+        scaling: (opts: UIScalingOptions) => Promise<unknown>;
+    };
+    /**
+     * Play a sound through the desktop app. Pass either a host-side `file` path
+     * (or file:/data:/http(s): URL) OR inline base64 `bytes` (+ `mime`); `volume`
+     * is 0..1. Thin wrapper over POST /api/sound. Requires the desktop audio host.
+     */
+    readonly sound: {
+        play: (opts: SoundPlayOptions) => Promise<unknown>;
     };
 }
 //# sourceMappingURL=client.d.ts.map

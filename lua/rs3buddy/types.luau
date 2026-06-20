@@ -222,6 +222,65 @@ export type ChatBox = {
 	y1: number,
 }
 
+export type BarsReadResult = {
+	ok: boolean,
+	stale: boolean,
+	ageMs: number,
+	bars: {BarValue},
+}
+
+export type BarValue = {
+	name: BarName,
+	found: boolean,
+	value: any,
+	max: any,
+	text: string,
+	anchor: any,
+	region: any,
+}
+
+export type BarName = "hitpoints" | "adrenaline" | "prayer" | "summoning"
+
+export type BarRect = {
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+}
+
+export type BarBox = {
+	x0: number,
+	y0: number,
+	x1: number,
+	y1: number,
+}
+
+export type AbilitiesReadResult = {
+	ok: boolean,
+	stale: boolean,
+	ageMs: number,
+	abilities: {AbilitySlot},
+}
+
+export type AbilitySlot = {
+	name: string,
+	rect: AbilityRect,
+	atlas: AbilityRect,
+	activating: boolean,
+	onCooldown: boolean,
+	cooldownText: string,
+	cooldownSeconds: any,
+	usable: boolean,
+	color: {number},
+}
+
+export type AbilityRect = {
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+}
+
 export type DrawItem = any
 
 export type Shape = {
@@ -337,6 +396,82 @@ export type PlayerNameResult = {
 export type FrameCaptureResult = {
 	draws: {DrawInfo},
 	drawCount: number,
+}
+
+export type UIWidget = {
+	type: WidgetType,
+	props: UIProps?,
+	children: {UIWidget}?,
+}
+
+export type WidgetType = "panel" | "row" | "column" | "stack" | "grid" | "spacer" | "label" | "gauge" | "image" | "divider" | "badge" | "worldLabel" | "worldMarker" | "tile"
+
+export type UIProps = {
+	width: any?,
+	height: any?,
+	pad: Spacing?,
+	margin: Spacing?,
+	gap: number?,
+	bg: Color?,
+	color: Color?,
+	fill: Color?,
+	track: Color?,
+	outline: Color?,
+	outlineWidth: number?,
+	radius: number?,
+	opacity: number?,
+	shadow: any?,
+	blend: BlendMode?,
+	animation: AnimationSpec?,
+	align: Align?,
+	justify: Justify?,
+	font: string?,
+	fontSize: number?,
+	text: any?,
+	value: number?,
+	max: number?,
+	min: number?,
+	vertical: boolean?,
+	src: string?,
+	tint: Color?,
+	anchor: any?,
+	tile: UITile?,
+	world: UIWorld?,
+	id: string?,
+	group: string?,
+}
+
+export type Spacing = any
+
+export type ShadowSpec = {
+	dx: number?,
+	dy: number?,
+	blur: number?,
+	spread: number?,
+	color: Color?,
+}
+
+export type Align = "start" | "center" | "end" | "stretch"
+
+export type Justify = "start" | "center" | "end" | "between" | "around" | "evenly"
+
+export type ScreenAnchor = "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right"
+
+export type UIPoint = {
+	x: number,
+	y: number,
+}
+
+export type UITile = {
+	x: number,
+	z: number,
+	floor: number?,
+}
+
+export type UIWorld = {
+	x: number,
+	y: number,
+	z: number,
 }
 
 return {}

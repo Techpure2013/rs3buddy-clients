@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from .transport import Transport
 from .models import (
     Position, ShaderInfo, TextureInfo, SceneSnapshot, ChatReadResult,
+    BarsReadResult, AbilitiesReadResult,
     DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult,
 )
 
@@ -44,6 +45,131 @@ class _ChatAPI:
         return self._t.request("GET", "/api/chat" + _q(x0=x0, y0=y0, x1=x1, y1=y1))
 
 
+class _BarsAPI:
+    """Status-bar reader namespace, reached via RS3Buddy.bars."""
+
+    def __init__(self, t: Transport) -> None:
+        self._t = t
+
+    def read(self) -> BarsReadResult:
+        """Read the four status bars (HP / adrenaline / prayer / summoning).
+
+        Each entry has ``value``, ``max`` (when current/max is shown),
+        ``found``, ``text`` and the located ``anchor`` + ``region``. Thin
+        wrapper over GET /api/bars; recognition runs server-side.
+        """
+        return self._t.request("GET", "/api/bars")
+
+
+class _AbilitiesAPI:
+    """Action-bar reader namespace, reached via RS3Buddy.abilities."""
+
+    def __init__(self, t: Transport) -> None:
+        self._t = t
+
+    def read(self) -> AbilitiesReadResult:
+        """Read the action bar(s): each slot's ability + cooldown + usable state.
+
+        Each entry has ``name``, ``rect``, ``onCooldown`` / ``cooldownText`` /
+        ``cooldownSeconds`` and ``usable``. Thin wrapper over GET
+        /api/abilities; recognition runs server-side.
+        """
+        return self._t.request("GET", "/api/abilities")
+
+
+class _UIAPI:
+    """Overlay-UI namespace, reached via RS3Buddy.ui.
+
+    Author the HUD as HTML + CSS and POST it; the server compiles it to the
+    same widget engine the SDK renders (clicks / drag / scaling all work).
+    Your app owns the state: poll ``events()`` for clicks (each event carries
+    the clicked widget's ``id``) and re-render by calling ``html()`` again.
+    """
+
+    def __init__(self, t: Transport) -> None:
+        self._t = t
+
+    def html(self, html: str, css: str = "") -> Any:
+        """Render an HTML + CSS "page" to the overlay (replaces the current UI).
+
+        Thin wrapper over POST /api/ui/html with body
+        ``{"html": ..., "css": ...}``. Compiles to the SAME engine as
+        ``render()``, so drag / clicks / scaling / events all work. This is
+        the primary authoring path; returns ``{"ok": True, "size": int}``.
+        """
+        return self._t.request("POST", "/api/ui/html", {"html": html, "css": css})
+
+    def render(self, tree: Any) -> Any:
+        """Render a raw widget tree (``{type, props, children}``) to the overlay.
+
+        Thin wrapper over POST /api/ui; ``tree`` is sent as the request body.
+        """
+        return self._t.request("POST", "/api/ui", tree)
+
+    def clear(self) -> Any:
+        """Clear the overlay UI (DELETE /api/ui)."""
+        return self._t.request("DELETE", "/api/ui")
+
+    def events(self) -> Any:
+        """Drain queued interaction events (clicks / close / minimize).
+
+        Thin wrapper over GET /api/ui/events; returns ``{"events": [ ... ]}``
+        where each event is ``{"type": str, "id": str, "x": int, "y": int}``.
+        Poll this in your loop and react (re-render via ``html()``).
+        """
+        return self._t.request("GET", "/api/ui/events")
+
+    def scaling(
+        self,
+        exponent: Optional[float] = None,
+        scale: Optional[float] = None,
+        base_height: Optional[int] = None,
+    ) -> Any:
+        """Configure auto display-scaling (how big the UI is on hi-DPI / 4K).
+
+        Thin wrapper over POST /api/ui/scaling; only the given keys are sent.
+        ``exponent`` 1 = proportional (≈constant physical size); >1 = bigger
+        on 4K (default 1.5). ``base_height`` maps to the ``baseHeight`` key.
+        """
+        body = {k: v for k, v in (
+            ("exponent", exponent),
+            ("scale", scale),
+            ("baseHeight", base_height),
+        ) if v is not None}
+        return self._t.request("POST", "/api/ui/scaling", body)
+
+
+class _SoundAPI:
+    """Sound playback namespace, reached via RS3Buddy.sound."""
+
+    def __init__(self, t: Transport) -> None:
+        self._t = t
+
+    def play(
+        self,
+        file: Optional[str] = None,
+        bytes: Optional[str] = None,
+        mime: Optional[str] = None,
+        volume: Optional[float] = None,
+    ) -> Any:
+        """Play a sound through the desktop app's audio host.
+
+        Thin wrapper over POST /api/sound. Provide EITHER ``file`` (a path or
+        ``file:``/``data:``/``http(s):`` URL) OR base64 ``bytes`` with an
+        optional ``mime`` (defaults server-side to ``audio/wav``). ``volume``
+        is an optional 0..1 gain. Only the given keys are sent. Returns
+        ``{"ok": True}``; ``{"ok": False, "error": ...}`` when no audio host
+        is available (sound requires the desktop app).
+        """
+        body = {k: v for k, v in (
+            ("file", file),
+            ("bytes", bytes),
+            ("mime", mime),
+            ("volume", volume),
+        ) if v is not None}
+        return self._t.request("POST", "/api/sound", body)
+
+
 class RS3Buddy:
     def __init__(
         self,
@@ -53,6 +179,10 @@ class RS3Buddy:
     ) -> None:
         self._t = Transport(base_url=base_url, client_name=client_name, timeout=timeout)
         self.chat = _ChatAPI(self._t)
+        self.bars = _BarsAPI(self._t)
+        self.abilities = _AbilitiesAPI(self._t)
+        self.ui = _UIAPI(self._t)
+        self.sound = _SoundAPI(self._t)
 
     @classmethod
     def connect(

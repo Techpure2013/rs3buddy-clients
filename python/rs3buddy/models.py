@@ -171,6 +171,30 @@ class ChatBox(TypedDict):
     y1: float
 
 
+type BarName = Literal["hitpoints", "adrenaline", "prayer", "summoning"]
+
+
+class BarRect(TypedDict):
+    x: float
+    y: float
+    w: float
+    h: float
+
+
+class BarBox(TypedDict):
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+
+class AbilityRect(TypedDict):
+    x: float
+    y: float
+    w: float
+    h: float
+
+
 class Shader(TypedDict):
     fragmentSource: str
     vertexSource: NotRequired[str]
@@ -253,6 +277,71 @@ class PlayerNameResult(TypedDict):
     title: NotRequired[str]
 
 
+type WidgetType = Literal[
+    "panel",
+    "row",
+    "column",
+    "stack",
+    "grid",
+    "spacer",
+    "label",
+    "gauge",
+    "image",
+    "divider",
+    "badge",
+    "worldLabel",
+    "worldMarker",
+    "tile",
+]
+
+
+type Spacing = float | list[float]
+
+
+class ShadowSpec(TypedDict):
+    dx: NotRequired[float]
+    dy: NotRequired[float]
+    blur: NotRequired[float]
+    spread: NotRequired[float]
+    color: NotRequired[Color]
+
+
+type Align = Literal["start", "center", "end", "stretch"]
+
+
+type Justify = Literal["start", "center", "end", "between", "around", "evenly"]
+
+
+type ScreenAnchor = Literal[
+    "top-left",
+    "top",
+    "top-right",
+    "left",
+    "center",
+    "right",
+    "bottom-left",
+    "bottom",
+    "bottom-right",
+]
+
+
+class UIPoint(TypedDict):
+    x: float
+    y: float
+
+
+class UITile(TypedDict):
+    x: float
+    z: float
+    floor: NotRequired[float]
+
+
+class UIWorld(TypedDict):
+    x: float
+    y: float
+    z: float
+
+
 class DrawInfo(TypedDict):
     index: float
     shaderId: float
@@ -307,6 +396,28 @@ class ChatLocate(TypedDict):
     box: ChatBox
 
 
+class BarValue(TypedDict):
+    name: BarName
+    found: bool
+    value: float | None
+    max: float | None
+    text: str
+    anchor: BarRect | None
+    region: BarBox | None
+
+
+class AbilitySlot(TypedDict):
+    name: str
+    rect: AbilityRect
+    atlas: AbilityRect
+    activating: bool
+    onCooldown: bool
+    cooldownText: str
+    cooldownSeconds: float | None
+    usable: bool
+    color: list[float]
+
+
 class Anchor1(TypedDict):
     mode: Literal["tile"]
     tile: TilePos
@@ -359,6 +470,41 @@ class FrameCaptureResult(TypedDict):
     drawCount: float
 
 
+class UIProps(TypedDict):
+    width: NotRequired[float | Literal["auto"] | Literal["flex"]]
+    height: NotRequired[float | Literal["auto"] | Literal["flex"]]
+    pad: NotRequired[Spacing]
+    margin: NotRequired[Spacing]
+    gap: NotRequired[float]
+    bg: NotRequired[Color]
+    color: NotRequired[Color]
+    fill: NotRequired[Color]
+    track: NotRequired[Color]
+    outline: NotRequired[Color]
+    outlineWidth: NotRequired[float]
+    radius: NotRequired[float]
+    opacity: NotRequired[float]
+    shadow: NotRequired[bool | ShadowSpec]
+    blend: NotRequired[BlendMode]
+    animation: NotRequired[AnimationSpec]
+    align: NotRequired[Align]
+    justify: NotRequired[Justify]
+    font: NotRequired[str]
+    fontSize: NotRequired[float]
+    text: NotRequired[str | float]
+    value: NotRequired[float]
+    max: NotRequired[float]
+    min: NotRequired[float]
+    vertical: NotRequired[bool]
+    src: NotRequired[str]
+    tint: NotRequired[Color]
+    anchor: NotRequired[ScreenAnchor | UIPoint]
+    tile: NotRequired[UITile]
+    world: NotRequired[UIWorld]
+    id: NotRequired[str]
+    group: NotRequired[str]
+
+
 class SceneSnapshot(TypedDict):
     timestamp: float
     player: PlayerInfo | None
@@ -381,6 +527,20 @@ class ChatReadResult(TypedDict):
     locate: ChatLocate
 
 
+class BarsReadResult(TypedDict):
+    ok: bool
+    stale: bool
+    ageMs: float
+    bars: list[BarValue]
+
+
+class AbilitiesReadResult(TypedDict):
+    ok: bool
+    stale: bool
+    ageMs: float
+    abilities: list[AbilitySlot]
+
+
 class Shape(TypedDict):
     id: NotRequired[str]
     anchor: Anchor
@@ -400,6 +560,12 @@ class Shape(TypedDict):
     groundOffset: NotRequired[float]
 
 
+class UIWidget(TypedDict):
+    type: WidgetType
+    props: NotRequired[UIProps]
+    children: NotRequired[list[UIWidget]]
+
+
 type DrawItem = Shape | Billboard | ImageItem
 
 
@@ -417,11 +583,14 @@ class RS3buddyApi(TypedDict):
     chunkCoord: ChunkCoord
     entityKind: EntityKind
     chatReadResult: ChatReadResult
+    barsReadResult: BarsReadResult
+    abilitiesReadResult: AbilitiesReadResult
     drawItem: DrawItem
     postFxPassInput: PostFxPassInput
     shaderFxInput: ShaderFxInput
     playerNameResult: PlayerNameResult
     frameCaptureResult: FrameCaptureResult
+    uiWidget: UIWidget
 
 
 type Model = RS3buddyApi

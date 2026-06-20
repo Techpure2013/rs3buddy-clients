@@ -176,6 +176,58 @@
 ---@field x1 number
 ---@field y1 number
 
+---@class BarsReadResult
+---@field ok boolean
+---@field stale boolean
+---@field ageMs number
+---@field bars BarValue[]
+
+---@class BarValue
+---@field name BarName
+---@field found boolean
+---@field value any
+---@field max any
+---@field text string
+---@field anchor any
+---@field region any
+
+---@alias BarName "hitpoints"|"adrenaline"|"prayer"|"summoning"
+
+---@class BarRect
+---@field x number
+---@field y number
+---@field w number
+---@field h number
+
+---@class BarBox
+---@field x0 number
+---@field y0 number
+---@field x1 number
+---@field y1 number
+
+---@class AbilitiesReadResult
+---@field ok boolean
+---@field stale boolean
+---@field ageMs number
+---@field abilities AbilitySlot[]
+
+---@class AbilitySlot
+---@field name string
+---@field rect AbilityRect
+---@field atlas AbilityRect
+---@field activating boolean
+---@field onCooldown boolean
+---@field cooldownText string
+---@field cooldownSeconds any
+---@field usable boolean
+---@field color number[]
+
+---@class AbilityRect
+---@field x number
+---@field y number
+---@field w number
+---@field h number
+
 ---@alias DrawItem any
 
 ---@class Shape
@@ -279,5 +331,75 @@
 ---@class FrameCaptureResult
 ---@field draws DrawInfo[]
 ---@field drawCount number
+
+---@class UIWidget
+---@field type WidgetType
+---@field props? UIProps
+---@field children? UIWidget[]
+
+---@alias WidgetType "panel"|"row"|"column"|"stack"|"grid"|"spacer"|"label"|"gauge"|"image"|"divider"|"badge"|"worldLabel"|"worldMarker"|"tile"
+
+---@class UIProps
+---@field width? any
+---@field height? any
+---@field pad? Spacing
+---@field margin? Spacing
+---@field gap? number
+---@field bg? Color
+---@field color? Color
+---@field fill? Color
+---@field track? Color
+---@field outline? Color
+---@field outlineWidth? number
+---@field radius? number
+---@field opacity? number
+---@field shadow? any
+---@field blend? BlendMode
+---@field animation? AnimationSpec
+---@field align? Align
+---@field justify? Justify
+---@field font? string
+---@field fontSize? number
+---@field text? any
+---@field value? number
+---@field max? number
+---@field min? number
+---@field vertical? boolean
+---@field src? string
+---@field tint? Color
+---@field anchor? any
+---@field tile? UITile
+---@field world? UIWorld
+---@field id? string
+---@field group? string
+
+---@alias Spacing any
+
+---@class ShadowSpec
+---@field dx? number
+---@field dy? number
+---@field blur? number
+---@field spread? number
+---@field color? Color
+
+---@alias Align "start"|"center"|"end"|"stretch"
+
+---@alias Justify "start"|"center"|"end"|"between"|"around"|"evenly"
+
+---@alias ScreenAnchor "top-left"|"top"|"top-right"|"left"|"center"|"right"|"bottom-left"|"bottom"|"bottom-right"
+
+---@class UIPoint
+---@field x number
+---@field y number
+
+---@class UITile
+---@field x number
+---@field z number
+---@field floor? number
+
+---@class UIWorld
+---@field x number
+---@field y number
+---@field z number
 
 return {}

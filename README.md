@@ -53,9 +53,10 @@ ChatReadResult chat = buddy.chat.read();
 System.out.println(chat.getLineCount() + " chat lines");
 ```
 
-The shared behavioral contract every client implements lives in
-[`CONTRACT.md`](./CONTRACT.md). Per-language usage and setup live in each
-package's own `README.md`.
+A full cross-language guide — UI overlays, sound, reading game state, and drawing —
+is in [`developer-guide.md`](./developer-guide.md). The shared behavioral contract
+every client implements lives in [`CONTRACT.md`](./CONTRACT.md), and per-language
+usage + setup live in each package's own `README.md`.
 
 ---
 

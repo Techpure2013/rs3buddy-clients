@@ -1,7 +1,7 @@
 import { Transport, TransportOptions } from "./transport";
 import type {
   Position, CaptureOptions, ShaderInfo, TextureInfo,
-  SceneSnapshot, ChatReadResult,
+  SceneSnapshot, ChatReadResult, BarsReadResult, AbilitiesReadResult,
   DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult,
 } from "./models";
 
@@ -18,6 +18,41 @@ export interface ChatReadOptions {
   y0?: number;
   x1?: number;
   y1?: number;
+}
+
+/** A queued UI interaction event (click / close / minimize). */
+export interface UIEvent {
+  type: string;
+  id: string;
+  x: number;
+  y: number;
+}
+
+/** Response of GET /api/ui/events. */
+export interface UIEvents {
+  events: UIEvent[];
+}
+
+/** Auto display-scaling options (how big the UI is on hi-DPI / 4K). */
+export interface UIScalingOptions {
+  /** 1 = proportional (≈constant physical size); >1 = bigger on 4K (default 1.5). */
+  exponent?: number;
+  /** Explicit scale multiplier (overrides the exponent curve). */
+  scale?: number;
+  /** Reference window height the scaling is normalised against. */
+  baseHeight?: number;
+}
+
+/** Sound playback options: a host-side file path OR base64 bytes (+ mime). */
+export interface SoundPlayOptions {
+  /** Path to an audio file on the host (or a file:/data:/http(s): URL). */
+  file?: string;
+  /** Base64-encoded audio, played inline; pair with `mime`. */
+  bytes?: string;
+  /** MIME type for inline `bytes` (default "audio/wav"). */
+  mime?: string;
+  /** Playback volume 0..1 (default host volume). */
+  volume?: number;
 }
 
 export class RS3Buddy {
@@ -154,5 +189,57 @@ export class RS3Buddy {
       this.t.request("GET", "/api/chat" + qs({
         x0: opts.x0, y0: opts.y0, x1: opts.x1, y1: opts.y1,
       })),
+  };
+
+  // ── Status bars (HP / adrenaline / prayer / summoning) ──
+  /**
+   * Read the four status bars: each bar's current `value`, `max` (when the bar
+   * shows current/max), `found`, and the located `anchor` + scanned `region`.
+   * Thin wrapper over GET /api/bars; recognition runs server-side.
+   */
+  readonly bars = {
+    read: (): Promise<BarsReadResult> => this.t.request("GET", "/api/bars"),
+  };
+
+  // ── Ability bars (action bar slots) ──
+  /**
+   * Read the action bar(s): each slot's `name`, `rect`, cooldown
+   * (`onCooldown` / `cooldownText` / `cooldownSeconds`) and `usable` state.
+   * Thin wrapper over GET /api/abilities; recognition runs server-side.
+   */
+  readonly abilities = {
+    read: (): Promise<AbilitiesReadResult> => this.t.request("GET", "/api/abilities"),
+  };
+
+  // ── Overlay UI ──
+  /**
+   * Overlay UI. Author the HUD as HTML + CSS and POST it; the server compiles it
+   * to the same widget engine the SDK renders (clicks / drag / scaling all work).
+   * Your app owns the state: poll `events()` for clicks (each event carries the
+   * clicked widget's `id`) and re-render by calling `html()` again.
+   */
+  readonly ui = {
+    /** Render an HTML + CSS "page" to the overlay (replaces the current UI). POST /api/ui/html. */
+    html: (html: string, css?: string): Promise<unknown> =>
+      this.t.request("POST", "/api/ui/html", { html, css: css ?? "" }),
+    /** Render a raw widget tree (`{ type, props, children }`) to the overlay. POST /api/ui. */
+    render: (tree: unknown): Promise<unknown> => this.t.request("POST", "/api/ui", tree),
+    /** Clear the overlay UI. DELETE /api/ui. */
+    clear: (): Promise<unknown> => this.t.request("DELETE", "/api/ui"),
+    /** Drain queued interaction events (clicks / close / minimize); each `{ type, id, x, y }`. GET /api/ui/events. */
+    events: (): Promise<UIEvents> => this.t.request("GET", "/api/ui/events"),
+    /** Configure auto display-scaling on hi-DPI / 4K. POST /api/ui/scaling. */
+    scaling: (opts: UIScalingOptions): Promise<unknown> =>
+      this.t.request("POST", "/api/ui/scaling", opts),
+  };
+
+  // ── Sound (play a developer-supplied sound, host-side) ──
+  /**
+   * Play a sound through the desktop app. Pass either a host-side `file` path
+   * (or file:/data:/http(s): URL) OR inline base64 `bytes` (+ `mime`); `volume`
+   * is 0..1. Thin wrapper over POST /api/sound. Requires the desktop audio host.
+   */
+  readonly sound = {
+    play: (opts: SoundPlayOptions): Promise<unknown> => this.t.request("POST", "/api/sound", opts),
   };
 }

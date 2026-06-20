@@ -2,6 +2,8 @@ package com.rs3buddy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rs3buddy.models.AbilitiesReadResult;
+import com.rs3buddy.models.BarsReadResult;
 import com.rs3buddy.models.ChatReadResult;
 import com.rs3buddy.models.FrameCaptureResult;
 import com.rs3buddy.models.PlayerNameResult;
@@ -31,14 +33,34 @@ public final class RS3Buddy {
     /** Chatbox reader namespace; reached via {@code buddy.chat.read()}. */
     public final Chat chat;
 
+    /** Status-bar reader namespace; reached via {@code buddy.bars.read()}. */
+    public final Bars bars;
+
+    /** Action-bar reader namespace; reached via {@code buddy.abilities.read()}. */
+    public final Abilities abilities;
+
+    /** Overlay-UI namespace; reached via {@code buddy.ui.html(...)}. */
+    public final UI ui;
+
+    /** Sound-playback namespace; reached via {@code buddy.sound.play(...)}. */
+    public final Sound sound;
+
     public RS3Buddy(String baseUrl) {
         this.t = new Transport(baseUrl);
         this.chat = new Chat();
+        this.bars = new Bars();
+        this.abilities = new Abilities();
+        this.ui = new UI();
+        this.sound = new Sound();
     }
 
     public RS3Buddy(String baseUrl, String clientName) {
         this.t = new Transport(baseUrl, clientName);
         this.chat = new Chat();
+        this.bars = new Bars();
+        this.abilities = new Abilities();
+        this.ui = new UI();
+        this.sound = new Sound();
     }
 
     /**
@@ -258,6 +280,109 @@ public final class RS3Buddy {
         public ChatReadResult read(Integer x0, Integer y0, Integer x1, Integer y1) {
             return t.request("GET", "/api/chat"
                     + q(map("x0", x0, "y0", y0, "x1", x1, "y1", y1)), null, ChatReadResult.class);
+        }
+    }
+
+    // ── Status bars ──
+    /**
+     * Status-bar reader (HP / adrenaline / prayer / summoning). Thin wrapper over
+     * GET /api/bars; each {@link BarsReadResult} entry exposes the current
+     * {@code value}, {@code max} (when shown), and the located anchor + region.
+     */
+    public final class Bars {
+        /** Read the four status bars. */
+        public BarsReadResult read() {
+            return t.request("GET", "/api/bars", null, BarsReadResult.class);
+        }
+    }
+
+    // ── Ability bars ──
+    /**
+     * Action-bar reader. Thin wrapper over GET /api/abilities; each slot exposes
+     * its ability {@code name}, {@code rect}, cooldown and {@code usable} state.
+     */
+    public final class Abilities {
+        /** Read the action bar(s). */
+        public AbilitiesReadResult read() {
+            return t.request("GET", "/api/abilities", null, AbilitiesReadResult.class);
+        }
+    }
+
+    // ── Overlay UI ──
+    /**
+     * Overlay UI. Author the HUD as HTML + CSS and POST it; the server compiles it
+     * to the same widget engine the SDK renders (clicks / drag / scaling all work).
+     * Your app owns the state: poll {@link #events()} for clicks (each event carries
+     * the clicked widget's {@code id}) and re-render by calling {@link #html} again.
+     */
+    public final class UI {
+        /** Render an HTML + CSS "page" to the overlay (replaces the current UI). */
+        public JsonNode html(String html, String css) {
+            return t.requestJson("POST", "/api/ui/html", map("html", html, "css", css == null ? "" : css));
+        }
+
+        /** Render a raw widget tree ({@code {type, props, children}}) to the overlay. */
+        public JsonNode render(Object tree) {
+            return t.requestJson("POST", "/api/ui", tree);
+        }
+
+        /** Clear the overlay UI. */
+        public JsonNode clear() {
+            return t.requestJson("DELETE", "/api/ui", null);
+        }
+
+        /** Drain queued interaction events (clicks / close / minimize); each {@code {type, id, x, y}}. */
+        public JsonNode events() {
+            return t.requestJson("GET", "/api/ui/events", null);
+        }
+
+        /**
+         * Configure auto display-scaling (how big the UI is on hi-DPI / 4K).
+         * Body: {@code { exponent?, scale?, baseHeight? }} — null args are omitted.
+         * {@code exponent} 1 = proportional (≈constant physical size); &gt;1 = bigger
+         * on 4K (default 1.5). {@code scale} overrides the exponent curve;
+         * {@code baseHeight} is the reference window height it normalises against.
+         */
+        public JsonNode scaling(Double exponent, Double scale, Double baseHeight) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            if (exponent != null) body.put("exponent", exponent);
+            if (scale != null) body.put("scale", scale);
+            if (baseHeight != null) body.put("baseHeight", baseHeight);
+            return t.requestJson("POST", "/api/ui/scaling", body);
+        }
+    }
+
+    // ── Sound ──
+    /**
+     * Sound playback (host-side). Thin wrapper over POST /api/sound; play either a
+     * host-side {@code file} path (or {@code file:}/{@code data:}/{@code http(s):}
+     * URL) via {@link #play}, or inline base64 audio via {@link #playBytes}.
+     * {@code volume} is 0..1. Requires the desktop audio host (no-op headless).
+     */
+    public final class Sound {
+        /**
+         * Play an audio file on the host. {@code file} is a path or a
+         * {@code file:}/{@code data:}/{@code http(s):} URL; {@code volume} (0..1)
+         * is omitted when null (host default).
+         */
+        public JsonNode play(String file, Double volume) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("file", file);
+            if (volume != null) body.put("volume", volume);
+            return t.requestJson("POST", "/api/sound", body);
+        }
+
+        /**
+         * Play inline base64-encoded audio. {@code base64} is the audio payload,
+         * {@code mime} its MIME type (e.g. {@code "audio/wav"}); {@code volume}
+         * (0..1) is omitted when null (host default).
+         */
+        public JsonNode playBytes(String base64, String mime, Double volume) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("bytes", base64);
+            body.put("mime", mime);
+            if (volume != null) body.put("volume", volume);
+            return t.requestJson("POST", "/api/sound", body);
         }
     }
 }

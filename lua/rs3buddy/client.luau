@@ -12,11 +12,14 @@ export type ShaderInfo = types.ShaderInfo
 export type TextureInfo = types.TextureInfo
 export type SceneSnapshot = types.SceneSnapshot
 export type ChatReadResult = types.ChatReadResult
+export type BarsReadResult = types.BarsReadResult
+export type AbilitiesReadResult = types.AbilitiesReadResult
 export type DrawItem = types.DrawItem
 export type PostFxPassInput = types.PostFxPassInput
 export type ShaderFxInput = types.ShaderFxInput
 export type PlayerNameResult = types.PlayerNameResult
 export type FrameCaptureResult = types.FrameCaptureResult
+export type UIWidget = types.UIWidget
 export type TransportOptions = transport.TransportOptions
 
 -- ── Chat reader namespace (reached via client.chat) ──
@@ -33,11 +36,43 @@ export type ChatAPI = typeof(setmetatable(
 ))
 export type ChatReadOptions = { x0: number?, y0: number?, x1: number?, y1: number? }
 
+-- Status-bar + ability-bar reader namespaces (client.bars / client.abilities),
+-- mirroring ChatAPI. Both are param-free reads.
+local BarsAPI = {}
+BarsAPI.__index = BarsAPI
+export type BarsAPI = typeof(setmetatable({} :: { _t: transport.Transport }, BarsAPI))
+
+local AbilitiesAPI = {}
+AbilitiesAPI.__index = AbilitiesAPI
+export type AbilitiesAPI = typeof(setmetatable({} :: { _t: transport.Transport }, AbilitiesAPI))
+
+-- Overlay-UI + sound namespaces (client.ui / client.sound), mirroring ChatAPI.
+-- ui authors the HUD as HTML+CSS and POSTs it; the same widget engine the SDK
+-- renders runs server-side (clicks / drag / scaling all work). Your app owns the
+-- state: poll ui:events() for clicks and re-render with ui:html(...). sound plays
+-- a developer-supplied clip through the desktop app's audio host.
+local UiAPI = {}
+UiAPI.__index = UiAPI
+export type UiAPI = typeof(setmetatable({} :: { _t: transport.Transport }, UiAPI))
+export type UIScalingOptions = { exponent: number?, scale: number?, base_height: number? }
+
+local SoundAPI = {}
+SoundAPI.__index = SoundAPI
+export type SoundAPI = typeof(setmetatable({} :: { _t: transport.Transport }, SoundAPI))
+export type SoundPlayOptions = { file: string?, bytes: string?, mime: string?, volume: number? }
+
 local RS3Buddy = {}
 RS3Buddy.__index = RS3Buddy
 
 export type RS3Buddy = typeof(setmetatable(
-	{} :: { _t: transport.Transport, chat: ChatAPI },
+	{} :: {
+		_t: transport.Transport,
+		chat: ChatAPI,
+		bars: BarsAPI,
+		abilities: AbilitiesAPI,
+		ui: UiAPI,
+		sound: SoundAPI,
+	},
 	RS3Buddy
 ))
 
@@ -66,11 +101,80 @@ function ChatAPI.read(self: ChatAPI, opts: ChatReadOptions?): ChatReadResult
 	return self._t:request("GET", "/api/chat" .. q({ x0 = o.x0, y0 = o.y0, x1 = o.x1, y1 = o.y1 }))
 end
 
+-- Read the four status bars (HP / adrenaline / prayer / summoning). Thin wrapper
+-- over GET /api/bars; each entry: { name, found, value, max, text, anchor, region }.
+function BarsAPI.read(self: BarsAPI): BarsReadResult
+	return self._t:request("GET", "/api/bars")
+end
+
+-- Read the action bar(s): each slot's ability + cooldown + usable state. Thin
+-- wrapper over GET /api/abilities.
+function AbilitiesAPI.read(self: AbilitiesAPI): AbilitiesReadResult
+	return self._t:request("GET", "/api/abilities")
+end
+
+-- ── Overlay UI (client.ui) ──
+-- Render an HTML + CSS "page" to the overlay (replaces the current UI). Thin
+-- wrapper over POST /api/ui/html with body { html, css }. Compiles to the SAME
+-- engine as ui:render, so drag / clicks / scaling / events all work — the primary
+-- authoring path. Returns { ok = true, size = n }.
+function UiAPI.html(self: UiAPI, html: string, css: string?): any
+	return self._t:request("POST", "/api/ui/html", { html = html, css = css or "" })
+end
+-- Render a raw widget tree ({ type, props, children }) to the overlay. Thin
+-- wrapper over POST /api/ui; `tree` is sent as the request body.
+function UiAPI.render(self: UiAPI, tree: UIWidget): any
+	return self._t:request("POST", "/api/ui", tree)
+end
+-- Clear the overlay UI (DELETE /api/ui).
+function UiAPI.clear(self: UiAPI): any
+	return self._t:request("DELETE", "/api/ui")
+end
+-- Drain queued interaction events (clicks / close / minimize). Thin wrapper over
+-- GET /api/ui/events; returns { events = { { type, id, x, y }, ... } }. Poll this
+-- in your loop and react (re-render via ui:html).
+function UiAPI.events(self: UiAPI): any
+	return self._t:request("GET", "/api/ui/events")
+end
+-- Configure auto display-scaling (how big the UI is on hi-DPI / 4K). Thin wrapper
+-- over POST /api/ui/scaling; only the given keys are sent. exponent 1 = proportional
+-- (≈constant physical size); >1 = bigger on 4K (default 1.5). `base_height` maps to
+-- the server's `baseHeight` key.
+function UiAPI.scaling(self: UiAPI, opts: UIScalingOptions): any
+	local o: UIScalingOptions = opts or {}
+	local body: { [string]: any } = {}
+	if o.exponent ~= nil then body.exponent = o.exponent end
+	if o.scale ~= nil then body.scale = o.scale end
+	if o.base_height ~= nil then body.baseHeight = o.base_height end
+	return self._t:request("POST", "/api/ui/scaling", body)
+end
+
+-- ── Sound (client.sound) ──
+-- Play a sound through the desktop app's audio host. Thin wrapper over POST
+-- /api/sound. Provide EITHER opts.file (a path or file:/data:/http(s): URL) OR
+-- base64 opts.bytes with an optional opts.mime (defaults server-side to
+-- audio/wav). opts.volume is an optional 0..1 gain. Only the given keys are sent.
+-- Returns { ok = true }; { ok = false, error = ... } when no audio host is
+-- available (sound requires the desktop app).
+function SoundAPI.play(self: SoundAPI, opts: SoundPlayOptions): any
+	local o: SoundPlayOptions = opts or {}
+	local body: { [string]: any } = {}
+	if o.file ~= nil then body.file = o.file end
+	if o.bytes ~= nil then body.bytes = o.bytes end
+	if o.mime ~= nil then body.mime = o.mime end
+	if o.volume ~= nil then body.volume = o.volume end
+	return self._t:request("POST", "/api/sound", body)
+end
+
 local function new(opts: TransportOptions): RS3Buddy
 	local t = transport.new(opts)
 	return setmetatable({
 		_t = t,
 		chat = setmetatable({ _t = t }, ChatAPI),
+		bars = setmetatable({ _t = t }, BarsAPI),
+		abilities = setmetatable({ _t = t }, AbilitiesAPI),
+		ui = setmetatable({ _t = t }, UiAPI),
+		sound = setmetatable({ _t = t }, SoundAPI),
 	}, RS3Buddy)
 end
 

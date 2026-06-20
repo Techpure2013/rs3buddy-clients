@@ -470,6 +470,149 @@ export interface ChatBox {
 }
 
 /**
+ * Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.
+ */
+export interface BarsReadResult {
+  ok: boolean;
+  /**
+   * False whenever a fresh capture happened on this call.
+   */
+  stale: boolean;
+  /**
+   * Age of the cached glyph set this read used, in ms.
+   */
+  ageMs: number;
+  /**
+   * The four status bars, in fixed order.
+   */
+  bars: BarValue[];
+}
+
+/**
+ * One status bar's reading.
+ */
+export interface BarValue {
+  /**
+   * Which bar this is.
+   */
+  name: "hitpoints" | "adrenaline" | "prayer" | "summoning";
+  /**
+   * True when the bar's anchor sprite was located on screen.
+   */
+  found: boolean;
+  /**
+   * Parsed numeric value (a percentage for adrenaline), or null when the anchor was found but no digits could be recognised in its region.
+   */
+  value: number | null;
+  /**
+   * The max value when the bar shows "current / max" (e.g. hitpoints 10200/10200 → max 10200); null when only a single number is shown.
+   */
+  max: number | null;
+  /**
+   * Raw recognised text incl. separators, e.g. "10200/10200" or "100%".
+   */
+  text: string;
+  /**
+   * The anchor sprite's screen rect, or null when the bar was not found.
+   */
+  anchor: BarRect | null;
+  /**
+   * The region scanned for the value, or null when the bar was not found.
+   */
+  region: BarBox | null;
+}
+
+/**
+ * The four readable RS3 status bars / orbs.
+ */
+export type BarName = "hitpoints" | "adrenaline" | "prayer" | "summoning";
+
+/**
+ * A located UI rect in window px (top-left x/y + size).
+ */
+export interface BarRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * A scanned region in window px (origin corner + opposite corner).
+ */
+export interface BarBox {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+/**
+ * Result of reading the action bar(s) (GET /api/abilities). `abilities` is in reading order — rows top-to-bottom, then left-to-right.
+ */
+export interface AbilitiesReadResult {
+  ok: boolean;
+  /**
+   * False whenever a fresh capture happened on this call.
+   */
+  stale: boolean;
+  /**
+   * Age of the cached glyph set this read used, in ms.
+   */
+  ageMs: number;
+  /**
+   * Recognised ability slots.
+   */
+  abilities: AbilitySlot[];
+}
+
+/**
+ * One recognised action-bar slot.
+ */
+export interface AbilitySlot {
+  /**
+   * Ability id WITHOUT the "ability:" prefix, e.g. "anticipation".
+   */
+  name: string;
+  rect: AbilityRect;
+  atlas: AbilityRect;
+  /**
+   * True on the frame(s) RS3 paints the activation-flash sweep over this slot. NOTE: the sweep is the GLOBAL-cooldown animation — it flashes across the WHOLE bar on any cast, so it is NOT per-ability. To tell which slot actually fired, use the cooldown timer (`onCooldown`), not this.
+   */
+  activating: boolean;
+  /**
+   * True when a cooldown number overlaps the slot.
+   */
+  onCooldown: boolean;
+  /**
+   * Recognised cooldown text, e.g. "5" or "1:23"; "" when none.
+   */
+  cooldownText: string;
+  /**
+   * Parsed cooldown in whole seconds, or null when unreadable / not on CD.
+   */
+  cooldownSeconds: number | null;
+  /**
+   * False when the icon is greyed out (not enough resource / unavailable). Derived from the per-vertex tint, so it depends on correct tint capture.
+   */
+  usable: boolean;
+  /**
+   * The slot's per-vertex tint [r, g, b], 0-255 (a grey triple ⇒ unusable).
+   */
+  color: number[];
+}
+
+/**
+ * A located UI rect in window px (top-left x/y + size).
+ */
+export interface AbilityRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
  * A single submittable overlay item — geometry Shape, text Billboard, or image sprite. Clean wire form of the SDK's `DrawItem` (uses the wire  {@link  ImageItem }  above). This is what `drawShape` accepts and `drawScene` accepts an array of.
  */
 export type DrawItem = Shape | Billboard | ImageItem;
@@ -849,4 +992,154 @@ export interface PlayerNameResult {
 export interface FrameCaptureResult {
   draws: DrawInfo[];
   drawCount: number;
+}
+
+/**
+ * A widget node on the wire: a built-in `type`, optional `props`, and child widgets. (Bare-text children are a TS authoring nicety; the wire model lists widget children only — use a `label` for text.)
+ */
+export interface UIWidget {
+  type: WidgetType;
+  props?: UIProps;
+  children?: UIWidget[];
+}
+
+/**
+ * Built-in widget kinds the engine lays out + flattens directly.
+ */
+export type WidgetType =
+  | "panel"
+  | "row"
+  | "column"
+  | "stack"
+  | "grid"
+  | "spacer"
+  | "label"
+  | "gauge"
+  | "image"
+  | "divider"
+  | "badge"
+  | "worldLabel"
+  | "worldMarker"
+  | "tile";
+
+/**
+ * Style + content props for a widget (JSON-serializable subset of `Props`).
+ */
+export interface UIProps {
+  width?: number | "auto" | "flex";
+  height?: number | "auto" | "flex";
+  pad?: Spacing;
+  margin?: Spacing;
+  gap?: number;
+  bg?: Color;
+  color?: Color;
+  fill?: Color;
+  track?: Color;
+  outline?: Color;
+  outlineWidth?: number;
+  radius?: number;
+  opacity?: number;
+  shadow?: boolean | ShadowSpec;
+  blend?: BlendMode;
+  animation?: AnimationSpec;
+  align?: Align;
+  justify?: Justify;
+  font?: string;
+  fontSize?: number;
+  text?: string | number;
+  value?: number;
+  max?: number;
+  min?: number;
+  vertical?: boolean;
+  /**
+   * Image source (a path or URL on the wire; bytes are TS-only).
+   */
+  src?: string;
+  tint?: Color;
+  anchor?: ScreenAnchor | UIPoint;
+  tile?: UITile;
+  world?: UIWorld;
+  id?: string;
+  group?: string;
+}
+
+/**
+ * Padding/margin: one value (all sides), [vertical, horizontal], or [top,right,bottom,left].
+ */
+export type Spacing = number | [number, number] | [number, number, number, number];
+
+/**
+ * Drop-shadow spec for a widget. `shadow: true` uses the soft default; an object tunes it. The engine renders a single shadow from the widget's outer silhouette (box → 9-sliced gaussian sprite; text/image → alpha-shaped native shadow pass).
+ */
+export interface ShadowSpec {
+  /**
+   * Horizontal offset in px. Default 0.
+   */
+  dx?: number;
+  /**
+   * Vertical offset in px. Default 3.
+   */
+  dy?: number;
+  /**
+   * Softness (gaussian blur radius) in px. Default 8.
+   */
+  blur?: number;
+  /**
+   * Grow the silhouette by this many px before blurring. Default 0.
+   */
+  spread?: number;
+  /**
+   * Shadow color. Default rgba(0,0,0,0.5).
+   */
+  color?: string | [number, number, number] | [number, number, number, number];
+}
+
+/**
+ * Cross-axis alignment of a container's children.
+ */
+export type Align = "start" | "center" | "end" | "stretch";
+
+/**
+ * Main-axis distribution of a container's children.
+ */
+export type Justify = "start" | "center" | "end" | "between" | "around" | "evenly";
+
+/**
+ * Screen corner/edge a root is pinned to (auto-follows window resize).
+ */
+export type ScreenAnchor =
+  | "top-left"
+  | "top"
+  | "top-right"
+  | "left"
+  | "center"
+  | "right"
+  | "bottom-left"
+  | "bottom"
+  | "bottom-right";
+
+/**
+ * Screen-pixel point (for an explicit `anchor`).
+ */
+export interface UIPoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * Tile anchor for world-space widgets.
+ */
+export interface UITile {
+  x: number;
+  z: number;
+  floor?: number;
+}
+
+/**
+ * World-space (engine units) anchor.
+ */
+export interface UIWorld {
+  x: number;
+  y: number;
+  z: number;
 }

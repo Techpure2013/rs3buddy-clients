@@ -22,11 +22,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "chunkCoord",
     "entityKind",
     "chatReadResult",
+    "barsReadResult",
+    "abilitiesReadResult",
     "drawItem",
     "postFxPassInput",
     "shaderFxInput",
     "playerNameResult",
-    "frameCaptureResult"
+    "frameCaptureResult",
+    "uiWidget"
 })
 @Generated("jsonschema2pojo")
 public class RS3buddyApi {
@@ -132,6 +135,22 @@ public class RS3buddyApi {
     @JsonPropertyDescription("Result of reading the chatbox (GET /api/chat).")
     private ChatReadResult chatReadResult;
     /**
+     * Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.
+     * (Required)
+     * 
+     */
+    @JsonProperty("barsReadResult")
+    @JsonPropertyDescription("Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.")
+    private BarsReadResult barsReadResult;
+    /**
+     * Result of reading the action bar(s) (GET /api/abilities). `abilities` is in reading order — rows top-to-bottom, then left-to-right.
+     * (Required)
+     * 
+     */
+    @JsonProperty("abilitiesReadResult")
+    @JsonPropertyDescription("Result of reading the action bar(s) (GET /api/abilities). `abilities` is in reading order \u2014 rows top-to-bottom, then left-to-right.")
+    private AbilitiesReadResult abilitiesReadResult;
+    /**
      * A single submittable overlay item — geometry Shape, text Billboard, or image sprite. Clean wire form of the SDK's `DrawItem` (uses the wire  {@link  ImageItem }  above). This is what `drawShape` accepts and `drawScene` accepts an array of.
      * (Required)
      * 
@@ -171,6 +190,14 @@ public class RS3buddyApi {
     @JsonProperty("frameCaptureResult")
     @JsonPropertyDescription("Result of GET /api/frame \u2014 one captured frame's draw calls. The SDK's internal `Frame` (which carries a `dispose()` function) is deliberately not exposed; the wire form is just the serializable draw list + metadata.")
     private FrameCaptureResult frameCaptureResult;
+    /**
+     * A widget node on the wire: a built-in `type`, optional `props`, and child widgets. (Bare-text children are a TS authoring nicety; the wire model lists widget children only — use a `label` for text.)
+     * (Required)
+     * 
+     */
+    @JsonProperty("uiWidget")
+    @JsonPropertyDescription("A widget node on the wire: a built-in `type`, optional `props`, and child widgets. (Bare-text children are a TS authoring nicety; the wire model lists widget children only \u2014 use a `label` for text.)")
+    private UIWidget uiWidget;
 
     /**
      * A world position in tile coordinates.
@@ -303,6 +330,26 @@ public class RS3buddyApi {
     }
 
     /**
+     * Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.
+     * (Required)
+     * 
+     */
+    @JsonProperty("barsReadResult")
+    public BarsReadResult getBarsReadResult() {
+        return barsReadResult;
+    }
+
+    /**
+     * Result of reading the action bar(s) (GET /api/abilities). `abilities` is in reading order — rows top-to-bottom, then left-to-right.
+     * (Required)
+     * 
+     */
+    @JsonProperty("abilitiesReadResult")
+    public AbilitiesReadResult getAbilitiesReadResult() {
+        return abilitiesReadResult;
+    }
+
+    /**
      * A single submittable overlay item — geometry Shape, text Billboard, or image sprite. Clean wire form of the SDK's `DrawItem` (uses the wire  {@link  ImageItem }  above). This is what `drawShape` accepts and `drawScene` accepts an array of.
      * (Required)
      * 
@@ -350,6 +397,16 @@ public class RS3buddyApi {
     @JsonProperty("frameCaptureResult")
     public FrameCaptureResult getFrameCaptureResult() {
         return frameCaptureResult;
+    }
+
+    /**
+     * A widget node on the wire: a built-in `type`, optional `props`, and child widgets. (Bare-text children are a TS authoring nicety; the wire model lists widget children only — use a `label` for text.)
+     * (Required)
+     * 
+     */
+    @JsonProperty("uiWidget")
+    public UIWidget getUiWidget() {
+        return uiWidget;
     }
 
     @Override
@@ -408,6 +465,14 @@ public class RS3buddyApi {
         sb.append('=');
         sb.append(((this.chatReadResult == null)?"<null>":this.chatReadResult));
         sb.append(',');
+        sb.append("barsReadResult");
+        sb.append('=');
+        sb.append(((this.barsReadResult == null)?"<null>":this.barsReadResult));
+        sb.append(',');
+        sb.append("abilitiesReadResult");
+        sb.append('=');
+        sb.append(((this.abilitiesReadResult == null)?"<null>":this.abilitiesReadResult));
+        sb.append(',');
         sb.append("drawItem");
         sb.append('=');
         sb.append(((this.drawItem == null)?"<null>":this.drawItem));
@@ -427,6 +492,10 @@ public class RS3buddyApi {
         sb.append("frameCaptureResult");
         sb.append('=');
         sb.append(((this.frameCaptureResult == null)?"<null>":this.frameCaptureResult));
+        sb.append(',');
+        sb.append("uiWidget");
+        sb.append('=');
+        sb.append(((this.uiWidget == null)?"<null>":this.uiWidget));
         sb.append(',');
         if (sb.charAt((sb.length()- 1)) == ',') {
             sb.setCharAt((sb.length()- 1), ']');
@@ -448,15 +517,18 @@ public class RS3buddyApi {
         result = ((result* 31)+((this.playerInfo == null)? 0 :this.playerInfo.hashCode()));
         result = ((result* 31)+((this.worldPos == null)? 0 :this.worldPos.hashCode()));
         result = ((result* 31)+((this.chunkCoord == null)? 0 :this.chunkCoord.hashCode()));
+        result = ((result* 31)+((this.barsReadResult == null)? 0 :this.barsReadResult.hashCode()));
         result = ((result* 31)+((this.frameCaptureResult == null)? 0 :this.frameCaptureResult.hashCode()));
         result = ((result* 31)+((this.playerNameResult == null)? 0 :this.playerNameResult.hashCode()));
         result = ((result* 31)+((this.postFxPassInput == null)? 0 :this.postFxPassInput.hashCode()));
         result = ((result* 31)+((this.position == null)? 0 :this.position.hashCode()));
         result = ((result* 31)+((this.captureOptions == null)? 0 :this.captureOptions.hashCode()));
         result = ((result* 31)+((this.tileCoord == null)? 0 :this.tileCoord.hashCode()));
+        result = ((result* 31)+((this.uiWidget == null)? 0 :this.uiWidget.hashCode()));
         result = ((result* 31)+((this.shaderInfo == null)? 0 :this.shaderInfo.hashCode()));
         result = ((result* 31)+((this.sceneSnapshot == null)? 0 :this.sceneSnapshot.hashCode()));
         result = ((result* 31)+((this.entity == null)? 0 :this.entity.hashCode()));
+        result = ((result* 31)+((this.abilitiesReadResult == null)? 0 :this.abilitiesReadResult.hashCode()));
         return result;
     }
 
@@ -469,7 +541,7 @@ public class RS3buddyApi {
             return false;
         }
         RS3buddyApi rhs = ((RS3buddyApi) other);
-        return (((((((((((((((((((this.entityKind == rhs.entityKind)||((this.entityKind!= null)&&this.entityKind.equals(rhs.entityKind)))&&((this.chatReadResult == rhs.chatReadResult)||((this.chatReadResult!= null)&&this.chatReadResult.equals(rhs.chatReadResult))))&&((this.drawInfo == rhs.drawInfo)||((this.drawInfo!= null)&&this.drawInfo.equals(rhs.drawInfo))))&&((this.textureInfo == rhs.textureInfo)||((this.textureInfo!= null)&&this.textureInfo.equals(rhs.textureInfo))))&&((this.shaderFxInput == rhs.shaderFxInput)||((this.shaderFxInput!= null)&&this.shaderFxInput.equals(rhs.shaderFxInput))))&&((this.drawItem == rhs.drawItem)||((this.drawItem!= null)&&this.drawItem.equals(rhs.drawItem))))&&((this.playerInfo == rhs.playerInfo)||((this.playerInfo!= null)&&this.playerInfo.equals(rhs.playerInfo))))&&((this.worldPos == rhs.worldPos)||((this.worldPos!= null)&&this.worldPos.equals(rhs.worldPos))))&&((this.chunkCoord == rhs.chunkCoord)||((this.chunkCoord!= null)&&this.chunkCoord.equals(rhs.chunkCoord))))&&((this.frameCaptureResult == rhs.frameCaptureResult)||((this.frameCaptureResult!= null)&&this.frameCaptureResult.equals(rhs.frameCaptureResult))))&&((this.playerNameResult == rhs.playerNameResult)||((this.playerNameResult!= null)&&this.playerNameResult.equals(rhs.playerNameResult))))&&((this.postFxPassInput == rhs.postFxPassInput)||((this.postFxPassInput!= null)&&this.postFxPassInput.equals(rhs.postFxPassInput))))&&((this.position == rhs.position)||((this.position!= null)&&this.position.equals(rhs.position))))&&((this.captureOptions == rhs.captureOptions)||((this.captureOptions!= null)&&this.captureOptions.equals(rhs.captureOptions))))&&((this.tileCoord == rhs.tileCoord)||((this.tileCoord!= null)&&this.tileCoord.equals(rhs.tileCoord))))&&((this.shaderInfo == rhs.shaderInfo)||((this.shaderInfo!= null)&&this.shaderInfo.equals(rhs.shaderInfo))))&&((this.sceneSnapshot == rhs.sceneSnapshot)||((this.sceneSnapshot!= null)&&this.sceneSnapshot.equals(rhs.sceneSnapshot))))&&((this.entity == rhs.entity)||((this.entity!= null)&&this.entity.equals(rhs.entity))));
+        return ((((((((((((((((((((((this.entityKind == rhs.entityKind)||((this.entityKind!= null)&&this.entityKind.equals(rhs.entityKind)))&&((this.chatReadResult == rhs.chatReadResult)||((this.chatReadResult!= null)&&this.chatReadResult.equals(rhs.chatReadResult))))&&((this.drawInfo == rhs.drawInfo)||((this.drawInfo!= null)&&this.drawInfo.equals(rhs.drawInfo))))&&((this.textureInfo == rhs.textureInfo)||((this.textureInfo!= null)&&this.textureInfo.equals(rhs.textureInfo))))&&((this.shaderFxInput == rhs.shaderFxInput)||((this.shaderFxInput!= null)&&this.shaderFxInput.equals(rhs.shaderFxInput))))&&((this.drawItem == rhs.drawItem)||((this.drawItem!= null)&&this.drawItem.equals(rhs.drawItem))))&&((this.playerInfo == rhs.playerInfo)||((this.playerInfo!= null)&&this.playerInfo.equals(rhs.playerInfo))))&&((this.worldPos == rhs.worldPos)||((this.worldPos!= null)&&this.worldPos.equals(rhs.worldPos))))&&((this.chunkCoord == rhs.chunkCoord)||((this.chunkCoord!= null)&&this.chunkCoord.equals(rhs.chunkCoord))))&&((this.barsReadResult == rhs.barsReadResult)||((this.barsReadResult!= null)&&this.barsReadResult.equals(rhs.barsReadResult))))&&((this.frameCaptureResult == rhs.frameCaptureResult)||((this.frameCaptureResult!= null)&&this.frameCaptureResult.equals(rhs.frameCaptureResult))))&&((this.playerNameResult == rhs.playerNameResult)||((this.playerNameResult!= null)&&this.playerNameResult.equals(rhs.playerNameResult))))&&((this.postFxPassInput == rhs.postFxPassInput)||((this.postFxPassInput!= null)&&this.postFxPassInput.equals(rhs.postFxPassInput))))&&((this.position == rhs.position)||((this.position!= null)&&this.position.equals(rhs.position))))&&((this.captureOptions == rhs.captureOptions)||((this.captureOptions!= null)&&this.captureOptions.equals(rhs.captureOptions))))&&((this.tileCoord == rhs.tileCoord)||((this.tileCoord!= null)&&this.tileCoord.equals(rhs.tileCoord))))&&((this.uiWidget == rhs.uiWidget)||((this.uiWidget!= null)&&this.uiWidget.equals(rhs.uiWidget))))&&((this.shaderInfo == rhs.shaderInfo)||((this.shaderInfo!= null)&&this.shaderInfo.equals(rhs.shaderInfo))))&&((this.sceneSnapshot == rhs.sceneSnapshot)||((this.sceneSnapshot!= null)&&this.sceneSnapshot.equals(rhs.sceneSnapshot))))&&((this.entity == rhs.entity)||((this.entity!= null)&&this.entity.equals(rhs.entity))))&&((this.abilitiesReadResult == rhs.abilitiesReadResult)||((this.abilitiesReadResult!= null)&&this.abilitiesReadResult.equals(rhs.abilitiesReadResult))));
     }
 
 }

@@ -72,6 +72,55 @@ DLL name blank and the module fails to load with "specified module could not be
 found"), and link `/MT` (static CRT) so the DLL doesn't depend on a separately
 installed MSVC runtime.
 
+## UI overlay
+
+Author a HUD as HTML + CSS and POST it; the server compiles it to the same widget
+engine the SDK renders (clicks / drag / scaling all work). Your code owns the
+state: poll `buddy.ui:events()` for clicks (each event carries the clicked
+widget's `id`) and re-render by calling `buddy.ui:html(...)` again.
+
+    local buddy = rs3buddy.connect()
+    buddy.ui:html(
+      "<panel anchor='top-right' draggable consume>"
+        .. "<span class='title'>Hello</span>"
+        .. "<button id='close' class='danger'>Exit</button></panel>",
+      "panel{background:#241d12;padding:12px;gap:8px}"
+        .. ".title{color:#f5c54a}.danger{background:#b03b30}"
+    )
+    -- ... later, in your loop:
+    for _, e in ipairs(buddy.ui:events().events) do
+      if e.id == "close" then buddy.ui:clear() end
+    end
+
+`buddy.ui` methods (all colon-called):
+
+- `ui:html(html, css?)` — render an HTML + CSS page (POST `/api/ui/html`). The
+  primary authoring path; replaces the current overlay.
+- `ui:render(tree)` — render a raw widget tree `{ type, props, children }` (POST
+  `/api/ui`). Same engine as `ui:html`.
+- `ui:clear()` — clear the overlay (DELETE `/api/ui`).
+- `ui:events()` — drain queued interaction events (GET `/api/ui/events`); returns
+  `{ events = { { type, id, x, y }, ... } }`.
+- `ui:scaling({ exponent?, scale?, base_height? })` — configure hi-DPI / 4K
+  display-scaling (POST `/api/ui/scaling`); only the given keys are sent
+  (`base_height` maps to the server's `baseHeight`).
+
+A full, runnable HUD (state + poll loop + re-render) is in
+**`examples/hud.luau`** — the Luau port of the Java `Hud` example.
+
+## Sound
+
+Play a developer-supplied clip through the desktop app's audio host:
+
+    buddy.sound:play({ file = "C:/sounds/ping.wav" })   -- path or file:/data:/http(s): URL
+    buddy.sound:play({ bytes = b64, mime = "audio/wav", volume = 0.5 })  -- base64 audio
+
+`sound:play(opts)` (POST `/api/sound`) takes `{ file?, bytes?, mime?, volume? }` —
+provide **either** `file` **or** base64 `bytes` (with optional `mime`, default
+`audio/wav`); `volume` is an optional 0..1 gain. Only the given keys are sent.
+Returns `{ ok = true }`, or `{ ok = false, error = ... }` when no audio host is
+available (sound requires the desktop app).
+
 ## Typing
 
 - **Luau:** `rs3buddy/types.luau` — native `export type` defs, `--!strict` clean.
