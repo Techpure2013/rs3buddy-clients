@@ -1,0 +1,9 @@
+<svg width="248" height="116" viewBox="0 0 248 116" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="248" height="116" rx="6" fill="#181410"/>
+  <rect x="14" y="14" width="220" height="88" rx="10" fill="#241d12" stroke="#b0904a" stroke-width="1.5"/>
+  <text x="30" y="42" fill="#f5c54a" font-size="16" font-weight="700">Tracker</text>
+  <text x="219" y="41" fill="#c9bfa6" font-size="16" text-anchor="end">×</text>
+  <line x1="26" y1="54" x2="222" y2="54" stroke="#ffffff" stroke-opacity="0.13"/>
+  <text x="30" y="82" fill="#c9bfa6" font-size="13">Prayer</text>
+  <text x="218" y="82" fill="#ffffff" font-size="13" text-anchor="end">612</text>
+</svg>

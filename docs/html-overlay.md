@@ -79,4 +79,6 @@ panel { background:#241d12; border:1px solid #b0904a; border-radius:10px; paddin
 ```
 
 This renders a draggable brown-stone panel in the top-right with a title, a close
-button, and one `Prayer` row.
+button, and one `Prayer` row — roughly:
+
+![Example overlay panel](overlay-example.svg)
