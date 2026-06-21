@@ -1,63 +1,46 @@
 # rs3buddy clients
 
-Official client libraries for **rs3buddy** in four languages. Each client is a
-thin, typed wrapper over the local rs3buddy HTTP server: you `connect()` to the
-running server and call simple methods like `chat.read()` to read live game data.
+Version 0.1.0 · last updated 2026-06-21
 
-These packages are generated from a private SDK and published here as a clean,
-ready-to-use distribution. There is no build step for consumers — install the
-package for your language and go.
+Client libraries for **rs3buddy** in four languages — thin, typed wrappers over the
+local rs3buddy HTTP server. You `connect()` to the running server and call methods
+like `chat.read()` to read live game state and draw in-game overlays.
 
-## Languages
+**New here? Start with the [Developer Guide](developer-guide.md)** — requirements,
+install, and a 10-line hello world.
 
-| Language       | Package                          | Install |
-|----------------|----------------------------------|---------|
-| TypeScript     | `@rs3buddy/client`               | `npm install @rs3buddy/client` |
-| Python         | `rs3buddy`                       | `pip install rs3buddy` |
-| Lua / Luau     | `rs3buddy`                       | `luarocks install luasocket` (then vendor the `rs3buddy/` package) |
-| Java           | `com.rs3buddy:rs3buddy-client`   | Gradle: `implementation "com.rs3buddy:rs3buddy-client:0.1.0"` |
+## Install
 
-## How it works
+The clients are distributed from this repo (they are not on npm / PyPI / Maven).
 
-Start the rs3buddy launcher (it brings up the local server). Then `connect()` —
-with no URL the client auto-discovers the running server — and read the chatbox:
+| Language | Runtime | Get the client |
+|---|---|---|
+| TypeScript / JS | Node 18+ | `cd ts && npm install && npm run build`, then `npm install <path>/ts` in your project |
+| Python | Python 3.10+ | `pip install "git+https://github.com/Techpure2013/rs3buddy-clients.git#subdirectory=python"` (or `pip install ./python`) |
+| Lua / Luau | Lua 5.1+ | `luarocks install luasocket`, then vendor the `lua/rs3buddy` folder |
+| Java | JDK 11+ to use, 17 to build · + Jackson | `gradle jar` in `java/` → `build/libs/rs3buddy-client-0.1.0.jar` (or `includeBuild`) — see [java/README.md](java/README.md) |
+
+## Quick taste
+
+Start the launcher (it brings up the local server), then `connect()` — no URL needed —
+and read the chatbox:
 
 ```ts
-// TypeScript
 import { RS3Buddy } from "@rs3buddy/client";
 const buddy = RS3Buddy.connect();
 const chat = await buddy.chat.read();
 console.log(`${chat.lineCount} chat lines`);
 ```
 
-```python
-# Python
-from rs3buddy import RS3Buddy
-buddy = RS3Buddy.connect()
-chat = buddy.chat.read()
-print(chat["lineCount"], "chat lines")
-```
+The same in Python / Lua / Java is in the [Developer Guide](developer-guide.md).
 
-```lua
--- Lua / Luau
-local rs3buddy = require("rs3buddy")
-local buddy = rs3buddy.connect()
-local chat = buddy.chat:read()
-print(chat.lineCount .. " chat lines")
-```
+## Docs
 
-```java
-// Java
-RS3Buddy buddy = RS3Buddy.connect();
-ChatReadResult chat = buddy.chat.read();
-System.out.println(chat.getLineCount() + " chat lines");
-```
-
-A full cross-language guide — UI overlays, sound, reading game state, and drawing —
-is in [`developer-guide.md`](./developer-guide.md). The shared behavioral contract
-every client implements lives in [`CONTRACT.md`](./CONTRACT.md), and per-language
-usage + setup live in each package's own `README.md`.
-
----
-
-_Generated distribution — version 0.1.0._
+- **[Developer Guide](developer-guide.md)** — from nothing to a running overlay
+- **API reference** (every method, per language): [TypeScript](ts/README.md) · [Python](python/README.md) · [Lua](lua/README.md) · [Java](java/README.md)
+- [docs/overview.md](docs/overview.md) — how it works (game ↔ hook ↔ engine ↔ your client)
+- [docs/examples.md](docs/examples.md) — the stall-free HUD loop, step by step
+- [docs/html-overlay.md](docs/html-overlay.md) — UI overlay: HTML tags + CSS
+- [docs/advanced.md](docs/advanced.md) — atlas, shaders/FX, capture, OCR
+- [docs/glossary.md](docs/glossary.md) · [docs/troubleshooting.md](docs/troubleshooting.md)
+- [CONTRACT.md](CONTRACT.md) — the raw HTTP contract (for languages without a client)
