@@ -1,6 +1,6 @@
 # rs3buddy — Examples
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 A working HUD that tracks your tile, counts ticks, and has Start/Pause + Exit
 buttons — and the **stall-free loop** every overlay should use. (For a bare
@@ -289,6 +289,85 @@ public final class Hud {
 
 </details>
 
+## Watching a progress bar (AFK detection)
+
+The `progress` reader is built for "did I stop?" alerts: name a bar once, then poll
+just that type and react when it `ended` (every bar of that type gone). This watches
+the skilling bar and prints a wake-up when it disappears.
+
+<details>
+<summary><b>TypeScript</b></summary>
+
+```ts
+const buddy = RS3Buddy.connect({ clientName: "afk-watch" });
+// One-time: read a bar's combo from progress.read(), then label it (combos are stable per bar type).
+await buddy.progress.setName("154730836:535157007", "skilling");
+
+for (;;) {
+  const p = await buddy.progress.read({ name: "skilling" });          // poll just that type
+  if (p.ended.some((e) => e.name === "skilling")) console.log("skilling stopped — wake up!");
+  await sleep(400);
+}
+```
+
+</details>
+
+<details>
+<summary><b>Python</b></summary>
+
+```python
+buddy = RS3Buddy.connect(client_name="afk-watch")
+buddy.progress.set_name("154730836:535157007", "skilling")            # one-time label
+
+while True:
+    p = buddy.progress.read(name="skilling")                          # poll just that type
+    if p and any(e["name"] == "skilling" for e in p["ended"]):
+        print("skilling stopped — wake up!")
+    time.sleep(0.4)
+```
+
+</details>
+
+<details>
+<summary><b>Lua / Luau</b></summary>
+
+```lua
+local buddy = rs3buddy.connect({ client_name = "afk-watch" })
+buddy.progress:setName("154730836:535157007", "skilling")            -- one-time label
+
+while true do
+  local p = buddy.progress:read({ name = "skilling" })                -- poll just that type
+  for _, e in ipairs(p and p.ended or {}) do
+    if e.name == "skilling" then print("skilling stopped — wake up!") end
+  end
+  -- sleep ~0.4s via your host timer (see the HUD loop above)
+end
+```
+
+</details>
+
+<details>
+<summary><b>Java</b></summary>
+
+```java
+RS3Buddy buddy = RS3Buddy.connect("afk-watch");
+buddy.progress.setName("154730836:535157007", "skilling");           // one-time label
+
+while (true) {
+    ProgressReadResult p = buddy.progress.read("skilling", null);     // poll just that type
+    for (ProgressEnded e : p.getEnded())
+        if ("skilling".equals(e.getName())) System.out.println("skilling stopped — wake up!");
+    Thread.sleep(400);
+}
+```
+
+</details>
+
+The combo (`"154730836:535157007"`) is a one-time setup value — read it once from
+`progress.read()` (every bar carries its `combo`), name it, then read by name forever
+after. Each group's `stableCount` is flicker-proof, so a moving bar (e.g. the up-to-3
+conjure timers) won't dip the count mid-action.
+
 From here, swap `getPlayer()` for any reader (`chat.read`, `bars.read`,
-`abilities.read`, `getScene`) and add rows/buttons — the loop shape stays the same.
-See your language's API reference for every method.
+`abilities.read`, `progress.read`, `getScene`) and add rows/buttons — the loop shape
+stays the same. See your language's API reference for every method.

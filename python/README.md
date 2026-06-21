@@ -1,6 +1,6 @@
 # rs3buddy — Python API reference
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 ## Install
 
@@ -123,6 +123,43 @@ res = buddy.abilities.read()
 for a in res["abilities"]:
     print(a["name"], "ready" if a["usable"] else "—",
           a["cooldownText"] if a["onCooldown"] else "")
+```
+
+## Progress
+
+*Clients v0.1.1+, requires the rs3buddy server running engine v0.2.7+.*
+
+Detects on-screen progress bars — action/skilling progress (fletching, crafting, invention…), Necromancy conjure timers, the adrenaline bar, and the like. Each bar **type** is identified automatically by its colour signature (a `combo` string) or a friendly `name` you register — no training. The reader measures fill % and tracks begin/end per type, so it is handy for "am I still skilling?" AFK detection or watching timers. Recognition runs server-side.
+
+### progress.read(name=None, combo=None) -> ProgressReadResult
+Reads every progress bar on screen. Pass `name=` or `combo=` to read just one bar type.
+- **Parameters** (optional; omit both to read all bars)
+  - `name` · `str | None` · read only the bar type registered under this friendly name.
+  - `combo` · `str | None` · read only the bar type with this colour signature.
+- **Returns** `ProgressReadResult` — `{ "ok", "ageMs", "count", "bars": [ProgressBar, ...], "groups": [ProgressGroup, ...], "began": [{ "combo", "name" }, ...], "ended": [{ "combo", "name", "maxPercent" }, ...] }`. `count` is how many bar **types** are on screen. Each `ProgressBar` is `{ "combo", "name": str|None, "x", "y", "w", "percent", "confident" }` — `percent` is `0..100`. Each `ProgressGroup` aggregates one type: `{ "combo", "name", "count", "stableCount", "percents": [high→low], "minPercent", "maxPercent", "confident" }`. `began` lists bar types that appeared this poll; `ended` lists bar types that went fully gone this poll.
+- **Notes** Opt-in; the bar must be visible on screen. A `combo` is the bar's colour signature (e.g. `"154730836:535157007"`) and is stable per bar type — name it once with `set_name`, then read it by `name`. begin/end is tracked per **type**: `began` fires when the first bar of a type appears, `ended` when all bars of that type are gone — ideal for AFK alerts. `stableCount` is flicker-proof (e.g. three conjure timers stay `3` even if one drops a frame), so prefer it over `count` when watching a fixed number of bars.
+
+### progress.names() -> dict
+The registry mapping each colour signature to its friendly name.
+- **Returns** `dict` — `{ "ok": True, "names": { combo: name } }`.
+
+### progress.set_name(combo, name) -> dict
+Register a friendly name for a colour signature (pass an empty `name` to remove it).
+- **Parameters** `combo` · `str` · the bar's colour signature. `name` · `str` · the friendly name; empty removes the mapping.
+- **Returns** `dict`.
+
+```python
+# Name a bar once (read its combo from progress.read(), then label it)
+buddy.progress.set_name("154730836:535157007", "skilling")
+
+# Poll just that bar type and react when it finishes
+res = buddy.progress.read(name="skilling")
+if res:
+    for g in res["groups"]:
+        print(g["name"], g["maxPercent"], "%")
+    for e in res["ended"]:
+        if e["name"] == "skilling":
+            print("skilling stopped — AFK!")
 ```
 
 ## Scene

@@ -1,13 +1,13 @@
 # rs3buddy — Java API reference
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 ## Install
 
 - **JDK 11+** (the client uses only `java.net.http.HttpClient` and `Path.of`, both Java 11). The project itself builds with a **JDK 17** toolchain.
 - **Get the jar.** There is no published Maven Central artifact. Build it from the client source at `C:\Users\Techp\Desktop\rs3buddy-clients\java`:
-  - **Source build (recommended):** in your own Gradle project add `includeBuild("path/to/rs3buddy-clients/java")` to `settings.gradle`, then depend on it: `implementation "com.rs3buddy:rs3buddy-client:0.1.0"`.
-  - **Plain jar:** run `gradle jar` in `rs3buddy-clients/java` → produces `build/libs/rs3buddy-client-0.1.0.jar`. Put that on your classpath alongside the three Jackson jars.
+  - **Source build (recommended):** in your own Gradle project add `includeBuild("path/to/rs3buddy-clients/java")` to `settings.gradle`, then depend on it: `implementation "com.rs3buddy:rs3buddy-client:0.1.1"`.
+  - **Plain jar:** run `gradle jar` in `rs3buddy-clients/java` → produces `build/libs/rs3buddy-client-0.1.1.jar`. Put that on your classpath alongside the three Jackson jars.
 - **Dependency:** Jackson `com.fasterxml.jackson.core:jackson-databind:2.17.1` (pulls in `jackson-core` + `jackson-annotations`). The source build resolves this transitively; for a plain-jar setup add all three Jackson jars (from your Gradle cache) to the classpath.
 
 ```java
@@ -103,6 +103,42 @@ Read the four status orbs (HP, adrenaline, prayer, summoning) in one call.
 Read the action bar(s): each slot's ability, rects, cooldown state, and usability. Slots are in reading order (rows top-to-bottom, then left-to-right).
 - **Returns** `AbilitiesReadResult` — getters: `getOk()` (`Boolean`), `getStale()` (`Boolean`), `getAgeMs()` (`Double`), `getAbilities()` (`List<AbilitySlot>`). Each `AbilitySlot` has `getName()` (`String`, ability id without the `ability:` prefix, e.g. `"anticipation"`), `getRect()` (`AbilityRect`, on-screen slot), `getAtlas()` (`AbilityRect`, sprite location in the atlas), `getActivating()` (`Boolean`), `getOnCooldown()` (`Boolean`), `getCooldownText()` (`String`, e.g. `"5"` or `"1:23"`; `""` when none), `getCooldownSeconds()` (`Double`; `null` when not on CD/unreadable), `getUsable()` (`Boolean`), `getColor()` (`List<Double>`, per-vertex tint `[r,g,b]`; a grey triple ⇒ unusable).
 - **Notes** Opt-in. `getActivating()` flashes across the whole bar on any cast (the global-cooldown sweep) — it is not a reliable per-slot "fired" signal; watch `getOnCooldown()` / `getCooldownSeconds()` instead. `getUsable()` is derived from the tint capture.
+
+## Progress
+
+Detect on-screen progress bars — action/skilling progress (fletching, crafting, invention…), Necromancy conjure timers, the adrenaline bar, and so on. Each bar **type** is identified automatically by its colour signature (a `combo` string) or by a friendly `name` you register — no training. The reader measures fill % and tracks begin/end per type (requires engine v0.2.7+; clients v0.1.1+).
+
+### ProgressReadResult progress.read()
+Read every progress bar on screen, grouped by type.
+- **Returns** `ProgressReadResult` — getters: `getOk()` (`Boolean`), `getAgeMs()` (`Double`), `getCount()` (`Integer`, how many bar **types** are on screen), `getBars()` (`List<ProgressBar>`), `getGroups()` (`List<ProgressGroup>`), `getBegan()` (`List<ProgressBegan>`), `getEnded()` (`List<ProgressEnded>`). Each `ProgressBar` has `getCombo()` (`String`), `getName()` (`String`, nullable), `getX()`/`getY()`/`getW()` (`Double`), `getPercent()` (`Double`, `0`–`100`), `getConfident()` (`Boolean`). Each `ProgressGroup` is the per-**type** aggregate — `getCombo()` (`String`), `getName()` (`String`), `getCount()` (`Integer`), `getStableCount()` (`Integer`, flicker-proof — e.g. 3 conjure timers read `3` even if one drops a frame), `getPercents()` (`List<Double>`, high→low), `getMinPercent()`/`getMaxPercent()` (`Double`), `getConfident()` (`Boolean`). Each `ProgressBegan` has `getCombo()` + `getName()` (bar types that appeared this poll); each `ProgressEnded` has `getCombo()`, `getName()`, `getMaxPercent()` (`Double`; bar types that went fully gone this poll).
+- **Overloads**
+  - `progress.read()` — all bar types on screen.
+  - `progress.read(String name, String combo)` — read just one bar type; pass one and leave the other `null`.
+- **Notes** Opt-in. A `combo` is the bar's colour signature (e.g. `"154730836:535157007"`) and is stable per bar type; register it once with `progress.setName(...)`, then read it by name. begin/end is per **type** (`getBegan()` = the first bar of a type appears; `getEnded()` = all bars of that type are gone) — ideal for AFK/skilling alerts.
+
+### JsonNode progress.names()
+The registry mapping each `combo` colour signature to its friendly name.
+- **Returns** `JsonNode` — a `combo` → name map.
+
+### JsonNode progress.setName(String combo, String name)
+Register (or clear) a friendly name for a `combo` colour signature.
+- **Parameters**
+  - `combo` · `String` · the bar's colour signature.
+  - `name` · `String` · the friendly name; pass an empty string to remove the mapping.
+- **Returns** `JsonNode` — the updated registry result.
+
+```java
+// Name a bar once, then watch it.
+buddy.progress.setName("154730836:535157007", "skilling");
+
+ProgressReadResult p = buddy.progress.read("skilling", null);
+if (p.getCount() == 0) {
+    System.out.println("not skilling right now");
+}
+for (ProgressEnded e : p.getEnded()) {
+    System.out.println(e.getName() + " finished at " + e.getMaxPercent() + "%");
+}
+```
 
 ## Scene
 

@@ -1,6 +1,6 @@
 # rs3buddy — Troubleshooting
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 **`connect()` throws / can't reach the server.**
 The launcher must be running and have injected the game. Start the launcher, make
@@ -26,7 +26,7 @@ Auto-discovery can't read the config file. Pass an explicit base URL + an HTTP
 request function:
 `rs3buddy.connect({ base_url = "http://127.0.0.1:<port>", request = my_http_fn })`.
 
-**Java: `com.rs3buddy:rs3buddy-client:0.1.0` won't resolve.**
+**Java: `com.rs3buddy:rs3buddy-client:0.1.1` won't resolve.**
 There is no published Maven artifact. Build it locally (`gradle jar` in `java/`, or
 `includeBuild`) — see [java/README.md](../java/README.md).
 

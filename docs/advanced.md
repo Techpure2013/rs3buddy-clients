@@ -1,6 +1,6 @@
 # rs3buddy — Advanced features
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 These are low-level surfaces. **Most apps never need them** — the high-level readers
 (`chat` / `bars` / `abilities`) and the UI/draw APIs cover normal work. Reach for

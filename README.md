@@ -1,6 +1,6 @@
 # rs3buddy clients
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 Client libraries for **rs3buddy** in four languages — thin, typed wrappers over the
 local rs3buddy HTTP server. You `connect()` to the running server and call methods
@@ -18,7 +18,7 @@ The clients are distributed from this repo (they are not on npm / PyPI / Maven).
 | TypeScript / JS | Node 18+ | `cd ts && npm install && npm run build`, then `npm install <path>/ts` in your project |
 | Python | Python 3.10+ | `pip install "git+https://github.com/Techpure2013/rs3buddy-clients.git#subdirectory=python"` (or `pip install ./python`) |
 | Lua / Luau | Lua 5.1+ | `luarocks install luasocket`, then vendor the `lua/rs3buddy` folder |
-| Java | JDK 11+ to use, 17 to build · + Jackson | `gradle jar` in `java/` → `build/libs/rs3buddy-client-0.1.0.jar` (or `includeBuild`) — see [java/README.md](java/README.md) |
+| Java | JDK 11+ to use, 17 to build · + Jackson | `gradle jar` in `java/` → `build/libs/rs3buddy-client-0.1.1.jar` (or `includeBuild`) — see [java/README.md](java/README.md) |
 
 ## Quick taste
 

@@ -1,6 +1,6 @@
 # rs3buddy — Overview
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 ## What it is
 
@@ -34,7 +34,9 @@ RuneScape 3 (NXT) ──GPU draws──▶ native hook ──▶ rs3buddy engine
 All of it comes from what's drawn on screen:
 
 - Chat lines, the stat orbs (HP / prayer / adrenaline / summoning), the action bar,
-  the 3D scene (objects, players, tiles), and recognised fonts / sprites.
+  progress bars (skilling / crafting actions, Necromancy conjure timers, the
+  adrenaline bar), the 3D scene (objects, players, tiles), and recognised
+  fonts / sprites.
 - The mouse position, for cursor-following overlays and tooltips.
 
 Never the keyboard, never game memory, never injected input.

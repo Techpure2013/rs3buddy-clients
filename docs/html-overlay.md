@@ -1,6 +1,6 @@
 # rs3buddy — UI overlay: HTML tags & CSS
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 Author your in-game HUD as HTML + CSS and pass it to `ui.html(html, css)`. The
 server compiles it into the widget engine, draws it in-game, and auto-scales it for

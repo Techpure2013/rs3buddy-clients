@@ -1,6 +1,6 @@
 # rs3buddy — Glossary
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 - **Launcher** — the desktop app you run. Injects the hook, starts the engine, and writes the config clients auto-discover.
 - **Hook** — the native library inside the game process that records GPU draws + the mouse position. No memory reads, no input injection.

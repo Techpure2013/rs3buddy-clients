@@ -1,6 +1,6 @@
 {
   "name": "@rs3buddy/client",
-  "version": "0.2.0",
+  "version": "0.1.1",
   "description": "rs3buddy HTTP client (TypeScript) — typed wrapper over the rs3buddy server.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

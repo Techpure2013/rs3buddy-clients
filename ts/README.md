@@ -1,6 +1,6 @@
 # rs3buddy — TypeScript API reference
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 ## Install
 
@@ -80,6 +80,42 @@ Reads the four status bars / orbs (HP, adrenaline, prayer, summoning) in one cal
 Reads the action bar(s): each slot's ability, on-screen + atlas rect, cooldown state, and whether it's usable. Recognition runs server-side.
 - **Returns** `Promise<AbilitiesReadResult>` — `{ ok, stale, ageMs, abilities: AbilitySlot[] }`, in reading order (rows top-to-bottom, then left-to-right). Each `AbilitySlot` is `{ name, rect, atlas, activating, onCooldown, cooldownText, cooldownSeconds, usable, color }`. `name` omits the `ability:` prefix; `cooldownSeconds` is `number | null`; `usable` is derived from the per-vertex tint (`color` ≈ `[51,51,51]` grey ⇒ unusable).
 - **Notes** Opt-in; the action bar must be on screen. `activating` is the global-cooldown flash sweep across the whole bar, not a per-ability "fired" signal — watch `onCooldown` / `cooldownSeconds` to tell which slot fired. `usable` depends on correct tint capture.
+
+## Progress
+
+Detects on-screen progress bars — action / skilling progress (fletching, crafting, invention…), Necromancy conjure timers, the adrenaline bar, and so on. Each bar type is identified automatically by its colour signature (a `combo` string) or a friendly `name` you register — no training. The reader measures fill % and tracks when a type begins / ends. Handy for "am I still skilling?" AFK detection or watching timers. Recognition runs server-side. (Clients v0.1.1+, requires the rs3buddy server engine v0.2.7+.)
+
+### buddy.progress.read(opts?: { name?: string; combo?: string }): Promise<ProgressReadResult>
+Reads every progress bar on screen. Pass `{ name }` or `{ combo }` to read just one bar type.
+- **Parameters**
+  - `opts` · `{ name?: string; combo?: string }` · optional filter. `name` matches a friendly name you registered with `setName`; `combo` matches the raw colour signature. Omit to read all bars.
+- **Returns** `Promise<ProgressReadResult>` — `{ ok, ageMs, count, bars, groups, began, ended }`. `count` is the number of bar TYPES on screen. `bars` is the raw per-bar snapshot — each `ProgressBar` is `{ combo, name, x, y, w, percent, confident }` (`name` is `string | null`). `groups` is the per-TYPE aggregate — each `ProgressGroup` is `{ combo, name, count, stableCount, percents, minPercent, maxPercent, confident }`, with `percents` ordered high→low and `stableCount` a flicker-proof count (e.g. 3 conjure timers read `3` even if one drops a frame). `began` is the bar types that appeared this poll (each `{ combo, name }`); `ended` is the bar types that went fully gone this poll (each `{ combo, name, maxPercent }`).
+- **Notes** Opt-in; the bar must be on screen. A `combo` is the bar's colour signature (e.g. `"154730836:535157007"`) and is stable per bar type — name it once with `setName`, then read it by `name`. begin / end is per TYPE: `began` fires when the first bar of a type appears, `ended` fires when every bar of that type is gone — ideal for AFK alerts.
+
+### buddy.progress.names(): Promise<{ ok: boolean; names: Record<string, string> }>
+Returns the combo → friendly-name registry.
+- **Returns** `Promise<{ ok: boolean; names: Record<string, string> }>` — `names` maps each registered `combo` to the friendly `name` you gave it.
+
+### buddy.progress.setName(combo: string, name: string): Promise<{ ok: boolean; names: Record<string, string> }>
+Registers a friendly name for a combo so you can read it by `name` instead of its colour signature.
+- **Parameters**
+  - `combo` · `string` · the bar's colour signature (from a `ProgressBar.combo` / `ProgressGroup.combo`).
+  - `name` · `string` · the friendly name to assign. Pass an empty string to remove the mapping.
+- **Returns** `Promise<{ ok: boolean; names: Record<string, string> }>` — the updated combo → name registry.
+- **Notes** Opt-in. Types importable from the package: `ProgressReadResult`, `ProgressBar`, `ProgressGroup`, `ProgressBegan`, `ProgressEnded`.
+
+```ts
+// Name a bar once (combo comes from a prior read), then poll by name.
+await buddy.progress.setName("154730836:535157007", "skilling");
+
+const p = await buddy.progress.read({ name: "skilling" });
+if (p.groups[0]) console.log(`skilling: ${p.groups[0].maxPercent}%`);
+
+// React when the skilling bar disappears (you stopped / ran out).
+if (p.ended.some((e) => e.name === "skilling")) {
+  console.log("skilling stopped — wake up!");
+}
+```
 
 ## Scene
 

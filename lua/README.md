@@ -1,6 +1,6 @@
 # rs3buddy — Lua API reference
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 ## Install / require
 
@@ -90,6 +90,42 @@ Reads the four status orbs (HP, adrenaline, prayer, summoning) in one call. Reco
 Reads the action bar(s): each slot's ability, on-screen and atlas rect, cooldown state, and usability. Recognition runs server-side. Slots are in reading order (rows top-to-bottom, then left-to-right).
 - **Returns** a table `{ ok, stale, ageMs, abilities }`. Each slot is `{ name, rect, atlas, activating, onCooldown, cooldownText, cooldownSeconds, usable, color }`. `rect`/`atlas` are `{ x, y, w, h }`; `cooldownText` is e.g. `"5"` or `"1:23"` (`""` when none); `cooldownSeconds` is a number or `nil`; `color` is the per-vertex tint `{ r, g, b }`.
 - **Notes** Opt-in; the action bar must be on screen. `usable` is derived from the tint — a slot with `color` ≈ `{51,51,51}` (grey) is unusable. `activating` is the global-cooldown sweep across the whole bar, not a per-ability "fired" signal; watch `onCooldown` / `cooldownSeconds` to know which slot fired.
+
+## Progress
+
+Detects on-screen progress bars — action / skilling progress (fletching, crafting, invention…), Necromancy conjure timers, the adrenaline bar, and so on. Each bar TYPE is identified automatically by its colour signature (a `combo` string) or a friendly `name` you register — there is nothing to train. The reader measures fill % and tracks when a type begins and ends, which makes it ideal for "am I still skilling?" AFK detection or watching timers. Recognition runs server-side. Requires clients v0.1.1+ and the rs3buddy server at engine v0.2.7+.
+
+This client exports the types `ProgressReadResult`, `ProgressBar`, `ProgressGroup`, `ProgressBegan`, and `ProgressEnded`.
+
+### buddy.progress:read(opts?)
+Reads every progress bar on screen, grouped by type, with begin/end transitions since the last poll.
+- **Parameters**
+  - `opts` · table (optional) · `{ name?, combo? }` — pass `{ name = ... }` or `{ combo = ... }` to read just one bar type. Omit to read all of them.
+- **Returns** a `ProgressReadResult` table `{ ok, ageMs, count, bars, groups, began, ended }`. `count` is how many bar TYPES are on screen. `bars` is an array of `ProgressBar` — each `{ combo, name, x, y, w, percent, confident }`, where `name` is `nil` until you register one, `percent` is `0..100`, and `confident` flags a clean read. `groups` is the per-TYPE aggregate, an array of `ProgressGroup` — each `{ combo, name, count, stableCount, percents, minPercent, maxPercent, confident }`, where `percents` is the fills high→low and `stableCount` is flicker-proof (e.g. 3 conjure timers read `stableCount = 3` even if one drops a frame). `began` is an array of `ProgressBegan` `{ combo, name }` — bar types that appeared this poll; `ended` is an array of `ProgressEnded` `{ combo, name, maxPercent }` — bar types that went fully gone this poll.
+- **Notes** Opt-in; the bar must be visible on screen. A `combo` is the bar's colour signature (e.g. `"154730836:535157007"`) and is stable per bar type, so name it once with `setName` and then read it by name. begin/end is tracked per TYPE — `began` fires when the first bar of a type appears, `ended` fires when every bar of that type is gone — which is what you want for AFK alerts.
+
+```lua
+-- Name the skilling bar once, then poll just that type and react when it ends.
+buddy.progress:setName("154730836:535157007", "skilling")
+
+local p = buddy.progress:read({ name = "skilling" })
+if p and p.count > 0 then
+    print(string.format("skilling %d%%", math.floor(p.groups[1].maxPercent)))
+end
+for _, e in ipairs(p and p.ended or {}) do
+    print("stopped: " .. (e.name or e.combo))   -- AFK alert
+end
+```
+
+### buddy.progress:names()
+Returns the registry mapping each colour signature to the friendly name you gave it.
+- **Returns** a table `{ ok, names }`, where `names` maps `combo` → `name` (e.g. `{ ["154730836:535157007"] = "skilling" }`).
+
+### buddy.progress:setName(combo, name)
+Registers a friendly name for a colour signature so `read` and the groups report it by name. Pass an empty name to remove the mapping.
+- **Parameters**
+  - `combo` · string · the bar's colour signature.
+  - `name` · string · the friendly name; empty removes it.
 
 ## Scene
 

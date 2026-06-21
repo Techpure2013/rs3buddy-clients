@@ -1,6 +1,6 @@
 # RS3 Buddy — Developer Guide
 
-Version 0.1.0 · last updated 2026-06-21
+Version 0.1.1 · last updated 2026-06-21
 
 rs3buddy is a local SDK for building RuneScape 3 overlays and tools. Your app
 `connect()`s to a server the launcher runs, reads live game state (chat, stats,
@@ -24,7 +24,7 @@ language's **API reference**; for deeper topics, the **docs/** folder (links at 
 | TypeScript / JS | Node 18+ | `cd ts && npm install && npm run build`, then `npm install <path>/rs3buddy-clients/ts` in your project |
 | Python | Python 3.10+ | `pip install "git+https://github.com/Techpure2013/rs3buddy-clients.git#subdirectory=python"` (or `pip install ./python`) |
 | Lua / Luau | Lua 5.1+ | `luarocks install luasocket`, then vendor the `lua/rs3buddy` folder |
-| Java | JDK 11+ to use, JDK 17 to build · + Jackson | `gradle jar` in `java/` → `build/libs/rs3buddy-client-0.1.0.jar` (or `includeBuild`) — see [java/README.md](java/README.md) |
+| Java | JDK 11+ to use, JDK 17 to build · + Jackson | `gradle jar` in `java/` → `build/libs/rs3buddy-client-0.1.1.jar` (or `includeBuild`) — see [java/README.md](java/README.md) |
 
 ## Hello world
 
