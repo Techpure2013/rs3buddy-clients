@@ -75,6 +75,7 @@ public final class SpriteNames {
     public static final String ABILITY_PROVOKE = "ability:provoke";
     public static final String ABILITY_PUNISH = "ability:punish";
     public static final String ABILITY_RANGED = "ability:ranged";
+    public static final String ABILITY_RANGED_ABILITIES = "ability:ranged_abilities";
     public static final String ABILITY_REFLECT = "ability:reflect";
     public static final String ABILITY_REGENERATE = "ability:regenerate";
     public static final String ABILITY_REJUVENATE = "ability:rejuvenate";
@@ -95,9 +96,22 @@ public final class SpriteNames {
     public static final String ABILITY_TRANSFIGURE = "ability:transfigure";
     public static final String ABILITY_TSUNAMI = "ability:tsunami";
     public static final String ABILITY_VOLLEY_OF_SOULS = "ability:volley_of_souls";
+    public static final String BAR_ADRENALINE_BAR = "bar:adrenaline_bar";
+    public static final String BAR_ADRENALINE_BAR_BACKGROUND = "bar:adrenaline_bar_background";
+    public static final String BAR_ADRENALINE_BAR_FULL_BACKGROUND = "bar:adrenaline_bar_full_background";
+    public static final String BAR_ADRENALINE_BAR_OVERCHARGE = "bar:adrenaline_bar_overcharge";
+    public static final String BAR_BLUE_BACKGROUND_BAR = "bar:blue_background_bar";
+    public static final String BAR_CONJURE_BAR_BACKGROUND = "bar:conjure_bar_background";
+    public static final String BAR_GREEN_BAR = "bar:green_bar";
+    public static final String BAR_SKILLING_BAR_BEGINNING = "bar:skilling_bar_beginning";
+    public static final String BAR_SKILLING_BAR_END = "bar:skilling_bar_end";
+    public static final String BAR_SKILLING_BAR_MIDDLE = "bar:skilling_bar_middle";
+    public static final String BAR_YELLOW_FRONTGROUND_BAR = "bar:yellow_frontground_bar";
     public static final String BUFF_BLOAT = "buff:bloat";
     public static final String BUFF_BONE_SHIELD = "buff:bone_shield";
+    public static final String BUFF_BUFF_BOX = "buff:buff_box";
     public static final String BUFF_COMMAND_PUTRID_ZOMBIE = "buff:command_putrid_zombie";
+    public static final String BUFF_DEVOTION = "buff:devotion";
     public static final String BUFF_FREEDOM = "buff:freedom";
     public static final String BUFF_NECROSIS = "buff:necrosis";
     public static final String BUFF_PUTRID_ZOMBIE = "buff:putrid_zombie";
@@ -126,6 +140,9 @@ public final class SpriteNames {
     public static final String CHATBOX_IRONMAN = "chatbox:ironman";
     public static final String CHATBOX_NEWS_ICON = "chatbox:news_icon";
     public static final String CHATBOX_QUICK_CHAT = "chatbox:quick_chat";
+    public static final String ENEMY_DEBUFF_BLOAT = "enemy_debuff:bloat";
+    public static final String ENEMY_DEBUFF_DEFENSE_MODIFIED = "enemy_debuff:defense_modified";
+    public static final String FAMILIAR_ORB = "familiar:orb";
     public static final String ID11NQECK = "id11nqeck";
     public static final String ID198MXHV = "id198mxhv";
     public static final String ID1H4RO9I = "id1h4ro9i";
@@ -151,10 +168,13 @@ public final class SpriteNames {
     public static final String INTERFACE_BUFF_BAR_3D = "interface:buff_bar_3d";
     public static final String INTERFACE_CALENDAR = "interface:calendar";
     public static final String INTERFACE_COIN_POUCH = "interface:coin_pouch";
+    public static final String INTERFACE_CONJURE_BAR = "interface:conjure_bar";
     public static final String INTERFACE_CONJURE_BAR_1 = "interface:conjure_bar_1";
     public static final String INTERFACE_CONJURE_BAR_2 = "interface:conjure_bar_2";
+    public static final String INTERFACE_CONJURE_HITSPLAT_END = "interface:conjure_hitsplat_end";
     public static final String INTERFACE_CONJURE_SPLAT_3 = "interface:conjure_splat_3";
     public static final String INTERFACE_CONSTITUTION_ICON = "interface:constitution_icon";
+    public static final String INTERFACE_CURRENCY_POUCH = "interface:currency_pouch";
     public static final String INTERFACE_DEFENCE_ABILTIES = "interface:defence_abilties";
     public static final String INTERFACE_DISASSEMBLE = "interface:disassemble";
     public static final String INTERFACE_EMOTES = "interface:emotes";
@@ -288,7 +308,6 @@ public final class SpriteNames {
     public static final String INTERFACE_IDLQW7NF = "interface:idlqw7nf";
     public static final String INTERFACE_IDLRXUUP = "interface:idlrxuup";
     public static final String INTERFACE_IDLZJ8XZ = "interface:idlzj8xz";
-    public static final String INTERFACE_IDMW3V0D = "interface:idmw3v0d";
     public static final String INTERFACE_IDN6BCO1 = "interface:idn6bco1";
     public static final String INTERFACE_IDN9P8Q3 = "interface:idn9p8q3";
     public static final String INTERFACE_IDNQLJI5 = "interface:idnqlji5";
@@ -323,13 +342,17 @@ public final class SpriteNames {
     public static final String INTERFACE_IDYUCOYI = "interface:idyucoyi";
     public static final String INTERFACE_IDZD075O = "interface:idzd075o";
     public static final String INTERFACE_IDZLI5LZ = "interface:idzli5lz";
+    public static final String INTERFACE_INVENTION_MATERIALS = "interface:invention_materials";
     public static final String INTERFACE_INVOKE_DEATH = "interface:invoke_death";
+    public static final String INTERFACE_LOCK_INVENTORY = "interface:lock_inventory";
     public static final String INTERFACE_MAGIC = "interface:magic";
     public static final String INTERFACE_MAGIC_ABILITIES = "interface:magic_abilities";
+    public static final String INTERFACE_MAGIC_TELEPORT_SPELLS = "interface:magic_teleport_spells";
     public static final String INTERFACE_MELEE_ABILITIES = "interface:melee_abilities";
     public static final String INTERFACE_NECROMANCY_ABILITIES = "interface:necromancy_abilities";
     public static final String INTERFACE_NECROMANCY_CONJURE_HIT_1 = "interface:necromancy_conjure_hit_1";
     public static final String INTERFACE_NECROMANCY_CONJURE_HIT_2 = "interface:necromancy_conjure_hit_2";
+    public static final String INTERFACE_NECROMANCY_CONJURE_HITSPLAT_BEGINNING = "interface:necromancy_conjure_hitsplat_beginning";
     public static final String INTERFACE_NECROMANCY_HIT_1 = "interface:necromancy_hit_1";
     public static final String INTERFACE_NECROMANCY_INCANTATIONS = "interface:necromancy_incantations";
     public static final String INTERFACE_PRAYER_BAR = "interface:prayer_bar";
@@ -513,6 +536,7 @@ public final class SpriteNames {
         "ability:provoke",
         "ability:punish",
         "ability:ranged",
+        "ability:ranged_abilities",
         "ability:reflect",
         "ability:regenerate",
         "ability:rejuvenate",
@@ -533,9 +557,22 @@ public final class SpriteNames {
         "ability:transfigure",
         "ability:tsunami",
         "ability:volley_of_souls",
+        "bar:adrenaline_bar",
+        "bar:adrenaline_bar_background",
+        "bar:adrenaline_bar_full_background",
+        "bar:adrenaline_bar_overcharge",
+        "bar:blue_background_bar",
+        "bar:conjure_bar_background",
+        "bar:green_bar",
+        "bar:skilling_bar_beginning",
+        "bar:skilling_bar_end",
+        "bar:skilling_bar_middle",
+        "bar:yellow_frontground_bar",
         "buff:bloat",
         "buff:bone_shield",
+        "buff:buff_box",
         "buff:command_putrid_zombie",
+        "buff:devotion",
         "buff:freedom",
         "buff:necrosis",
         "buff:putrid_zombie",
@@ -564,6 +601,9 @@ public final class SpriteNames {
         "chatbox:ironman",
         "chatbox:news_icon",
         "chatbox:quick_chat",
+        "enemy_debuff:bloat",
+        "enemy_debuff:defense_modified",
+        "familiar:orb",
         "id11nqeck",
         "id198mxhv",
         "id1h4ro9i",
@@ -589,10 +629,13 @@ public final class SpriteNames {
         "interface:buff_bar_3d",
         "interface:calendar",
         "interface:coin_pouch",
+        "interface:conjure_bar",
         "interface:conjure_bar_1",
         "interface:conjure_bar_2",
+        "interface:conjure_hitsplat_end",
         "interface:conjure_splat_3",
         "interface:constitution_icon",
+        "interface:currency_pouch",
         "interface:defence_abilties",
         "interface:disassemble",
         "interface:emotes",
@@ -726,7 +769,6 @@ public final class SpriteNames {
         "interface:idlqw7nf",
         "interface:idlrxuup",
         "interface:idlzj8xz",
-        "interface:idmw3v0d",
         "interface:idn6bco1",
         "interface:idn9p8q3",
         "interface:idnqlji5",
@@ -761,13 +803,17 @@ public final class SpriteNames {
         "interface:idyucoyi",
         "interface:idzd075o",
         "interface:idzli5lz",
+        "interface:invention_materials",
         "interface:invoke_death",
+        "interface:lock_inventory",
         "interface:magic",
         "interface:magic_abilities",
+        "interface:magic_teleport_spells",
         "interface:melee_abilities",
         "interface:necromancy_abilities",
         "interface:necromancy_conjure_hit_1",
         "interface:necromancy_conjure_hit_2",
+        "interface:necromancy_conjure_hitsplat_beginning",
         "interface:necromancy_hit_1",
         "interface:necromancy_incantations",
         "interface:prayer_bar",

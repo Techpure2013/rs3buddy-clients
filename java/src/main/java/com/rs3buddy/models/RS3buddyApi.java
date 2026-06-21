@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "chatReadResult",
     "barsReadResult",
     "abilitiesReadResult",
+    "progressReadResult",
     "drawItem",
     "postFxPassInput",
     "shaderFxInput",
@@ -150,6 +151,14 @@ public class RS3buddyApi {
     @JsonProperty("abilitiesReadResult")
     @JsonPropertyDescription("Result of reading the action bar(s) (GET /api/abilities). `abilities` is in reading order \u2014 rows top-to-bottom, then left-to-right.")
     private AbilitiesReadResult abilitiesReadResult;
+    /**
+     * Result of GET /api/progress. Detects every progress bar by shape, identifies the TYPE by colour signature (`combo`, or a friendly `name` if registered), measures fill %, and tracks begin/end per type. Pass `?name=` / `?combo=` to read just one bar type.
+     * (Required)
+     * 
+     */
+    @JsonProperty("progressReadResult")
+    @JsonPropertyDescription("Result of GET /api/progress. Detects every progress bar by shape, identifies the TYPE by colour signature (`combo`, or a friendly `name` if registered), measures fill %, and tracks begin/end per type. Pass `?name=` / `?combo=` to read just one bar type.")
+    private ProgressReadResult progressReadResult;
     /**
      * A single submittable overlay item — geometry Shape, text Billboard, or image sprite. Clean wire form of the SDK's `DrawItem` (uses the wire  {@link  ImageItem }  above). This is what `drawShape` accepts and `drawScene` accepts an array of.
      * (Required)
@@ -350,6 +359,16 @@ public class RS3buddyApi {
     }
 
     /**
+     * Result of GET /api/progress. Detects every progress bar by shape, identifies the TYPE by colour signature (`combo`, or a friendly `name` if registered), measures fill %, and tracks begin/end per type. Pass `?name=` / `?combo=` to read just one bar type.
+     * (Required)
+     * 
+     */
+    @JsonProperty("progressReadResult")
+    public ProgressReadResult getProgressReadResult() {
+        return progressReadResult;
+    }
+
+    /**
      * A single submittable overlay item — geometry Shape, text Billboard, or image sprite. Clean wire form of the SDK's `DrawItem` (uses the wire  {@link  ImageItem }  above). This is what `drawShape` accepts and `drawScene` accepts an array of.
      * (Required)
      * 
@@ -473,6 +492,10 @@ public class RS3buddyApi {
         sb.append('=');
         sb.append(((this.abilitiesReadResult == null)?"<null>":this.abilitiesReadResult));
         sb.append(',');
+        sb.append("progressReadResult");
+        sb.append('=');
+        sb.append(((this.progressReadResult == null)?"<null>":this.progressReadResult));
+        sb.append(',');
         sb.append("drawItem");
         sb.append('=');
         sb.append(((this.drawItem == null)?"<null>":this.drawItem));
@@ -520,6 +543,7 @@ public class RS3buddyApi {
         result = ((result* 31)+((this.barsReadResult == null)? 0 :this.barsReadResult.hashCode()));
         result = ((result* 31)+((this.frameCaptureResult == null)? 0 :this.frameCaptureResult.hashCode()));
         result = ((result* 31)+((this.playerNameResult == null)? 0 :this.playerNameResult.hashCode()));
+        result = ((result* 31)+((this.progressReadResult == null)? 0 :this.progressReadResult.hashCode()));
         result = ((result* 31)+((this.postFxPassInput == null)? 0 :this.postFxPassInput.hashCode()));
         result = ((result* 31)+((this.position == null)? 0 :this.position.hashCode()));
         result = ((result* 31)+((this.captureOptions == null)? 0 :this.captureOptions.hashCode()));
@@ -541,7 +565,7 @@ public class RS3buddyApi {
             return false;
         }
         RS3buddyApi rhs = ((RS3buddyApi) other);
-        return ((((((((((((((((((((((this.entityKind == rhs.entityKind)||((this.entityKind!= null)&&this.entityKind.equals(rhs.entityKind)))&&((this.chatReadResult == rhs.chatReadResult)||((this.chatReadResult!= null)&&this.chatReadResult.equals(rhs.chatReadResult))))&&((this.drawInfo == rhs.drawInfo)||((this.drawInfo!= null)&&this.drawInfo.equals(rhs.drawInfo))))&&((this.textureInfo == rhs.textureInfo)||((this.textureInfo!= null)&&this.textureInfo.equals(rhs.textureInfo))))&&((this.shaderFxInput == rhs.shaderFxInput)||((this.shaderFxInput!= null)&&this.shaderFxInput.equals(rhs.shaderFxInput))))&&((this.drawItem == rhs.drawItem)||((this.drawItem!= null)&&this.drawItem.equals(rhs.drawItem))))&&((this.playerInfo == rhs.playerInfo)||((this.playerInfo!= null)&&this.playerInfo.equals(rhs.playerInfo))))&&((this.worldPos == rhs.worldPos)||((this.worldPos!= null)&&this.worldPos.equals(rhs.worldPos))))&&((this.chunkCoord == rhs.chunkCoord)||((this.chunkCoord!= null)&&this.chunkCoord.equals(rhs.chunkCoord))))&&((this.barsReadResult == rhs.barsReadResult)||((this.barsReadResult!= null)&&this.barsReadResult.equals(rhs.barsReadResult))))&&((this.frameCaptureResult == rhs.frameCaptureResult)||((this.frameCaptureResult!= null)&&this.frameCaptureResult.equals(rhs.frameCaptureResult))))&&((this.playerNameResult == rhs.playerNameResult)||((this.playerNameResult!= null)&&this.playerNameResult.equals(rhs.playerNameResult))))&&((this.postFxPassInput == rhs.postFxPassInput)||((this.postFxPassInput!= null)&&this.postFxPassInput.equals(rhs.postFxPassInput))))&&((this.position == rhs.position)||((this.position!= null)&&this.position.equals(rhs.position))))&&((this.captureOptions == rhs.captureOptions)||((this.captureOptions!= null)&&this.captureOptions.equals(rhs.captureOptions))))&&((this.tileCoord == rhs.tileCoord)||((this.tileCoord!= null)&&this.tileCoord.equals(rhs.tileCoord))))&&((this.uiWidget == rhs.uiWidget)||((this.uiWidget!= null)&&this.uiWidget.equals(rhs.uiWidget))))&&((this.shaderInfo == rhs.shaderInfo)||((this.shaderInfo!= null)&&this.shaderInfo.equals(rhs.shaderInfo))))&&((this.sceneSnapshot == rhs.sceneSnapshot)||((this.sceneSnapshot!= null)&&this.sceneSnapshot.equals(rhs.sceneSnapshot))))&&((this.entity == rhs.entity)||((this.entity!= null)&&this.entity.equals(rhs.entity))))&&((this.abilitiesReadResult == rhs.abilitiesReadResult)||((this.abilitiesReadResult!= null)&&this.abilitiesReadResult.equals(rhs.abilitiesReadResult))));
+        return (((((((((((((((((((((((this.entityKind == rhs.entityKind)||((this.entityKind!= null)&&this.entityKind.equals(rhs.entityKind)))&&((this.chatReadResult == rhs.chatReadResult)||((this.chatReadResult!= null)&&this.chatReadResult.equals(rhs.chatReadResult))))&&((this.drawInfo == rhs.drawInfo)||((this.drawInfo!= null)&&this.drawInfo.equals(rhs.drawInfo))))&&((this.textureInfo == rhs.textureInfo)||((this.textureInfo!= null)&&this.textureInfo.equals(rhs.textureInfo))))&&((this.shaderFxInput == rhs.shaderFxInput)||((this.shaderFxInput!= null)&&this.shaderFxInput.equals(rhs.shaderFxInput))))&&((this.drawItem == rhs.drawItem)||((this.drawItem!= null)&&this.drawItem.equals(rhs.drawItem))))&&((this.playerInfo == rhs.playerInfo)||((this.playerInfo!= null)&&this.playerInfo.equals(rhs.playerInfo))))&&((this.worldPos == rhs.worldPos)||((this.worldPos!= null)&&this.worldPos.equals(rhs.worldPos))))&&((this.chunkCoord == rhs.chunkCoord)||((this.chunkCoord!= null)&&this.chunkCoord.equals(rhs.chunkCoord))))&&((this.barsReadResult == rhs.barsReadResult)||((this.barsReadResult!= null)&&this.barsReadResult.equals(rhs.barsReadResult))))&&((this.frameCaptureResult == rhs.frameCaptureResult)||((this.frameCaptureResult!= null)&&this.frameCaptureResult.equals(rhs.frameCaptureResult))))&&((this.playerNameResult == rhs.playerNameResult)||((this.playerNameResult!= null)&&this.playerNameResult.equals(rhs.playerNameResult))))&&((this.progressReadResult == rhs.progressReadResult)||((this.progressReadResult!= null)&&this.progressReadResult.equals(rhs.progressReadResult))))&&((this.postFxPassInput == rhs.postFxPassInput)||((this.postFxPassInput!= null)&&this.postFxPassInput.equals(rhs.postFxPassInput))))&&((this.position == rhs.position)||((this.position!= null)&&this.position.equals(rhs.position))))&&((this.captureOptions == rhs.captureOptions)||((this.captureOptions!= null)&&this.captureOptions.equals(rhs.captureOptions))))&&((this.tileCoord == rhs.tileCoord)||((this.tileCoord!= null)&&this.tileCoord.equals(rhs.tileCoord))))&&((this.uiWidget == rhs.uiWidget)||((this.uiWidget!= null)&&this.uiWidget.equals(rhs.uiWidget))))&&((this.shaderInfo == rhs.shaderInfo)||((this.shaderInfo!= null)&&this.shaderInfo.equals(rhs.shaderInfo))))&&((this.sceneSnapshot == rhs.sceneSnapshot)||((this.sceneSnapshot!= null)&&this.sceneSnapshot.equals(rhs.sceneSnapshot))))&&((this.entity == rhs.entity)||((this.entity!= null)&&this.entity.equals(rhs.entity))))&&((this.abilitiesReadResult == rhs.abilitiesReadResult)||((this.abilitiesReadResult!= null)&&this.abilitiesReadResult.equals(rhs.abilitiesReadResult))));
     }
 
 }

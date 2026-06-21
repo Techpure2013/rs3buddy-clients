@@ -1,7 +1,7 @@
 import { Transport, TransportOptions } from "./transport";
 import type {
   Position, CaptureOptions, ShaderInfo, TextureInfo,
-  SceneSnapshot, ChatReadResult, BarsReadResult, AbilitiesReadResult,
+  SceneSnapshot, ChatReadResult, BarsReadResult, AbilitiesReadResult, ProgressReadResult,
   DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult,
 } from "./models";
 
@@ -18,6 +18,14 @@ export interface ChatReadOptions {
   y0?: number;
   x1?: number;
   y1?: number;
+}
+
+/** Optionally read just one bar type (by friendly name or colour-signature combo). */
+export interface ProgressReadOptions {
+  /** Friendly name you registered (e.g. "skilling", "conjure"). */
+  name?: string;
+  /** Raw colour-signature combo key. */
+  combo?: string;
 }
 
 /** A queued UI interaction event (click / close / minimize). */
@@ -209,6 +217,26 @@ export class RS3Buddy {
    */
   readonly abilities = {
     read: (): Promise<AbilitiesReadResult> => this.t.request("GET", "/api/abilities"),
+  };
+
+  // ── Progress bars (generic progress-bar detector) ──
+  /**
+   * Detect on-screen progress bars (action progress, conjure timers, skilling,
+   * adrenaline, …). Each bar TYPE is identified by its colour signature
+   * (`combo`, or a friendly `name` you registered) — no training. Returns the
+   * raw `bars`, a per-type aggregate (`groups`, with a flicker-proof
+   * `stableCount` + each fill %), and per-type `began` / `ended` events. Pass
+   * `{ name }` or `{ combo }` to read just one bar type. GET /api/progress.
+   */
+  readonly progress = {
+    read: (opts: ProgressReadOptions = {}): Promise<ProgressReadResult> =>
+      this.t.request("GET", "/api/progress" + qs({ name: opts.name, combo: opts.combo })),
+    /** The combo → friendly-name registry. GET /api/progress/names. */
+    names: (): Promise<{ ok: boolean; names: Record<string, string> }> =>
+      this.t.request("GET", "/api/progress/names"),
+    /** Name a bar combo so you can read it by name (empty name removes it). POST /api/progress/name. */
+    setName: (combo: string, name: string): Promise<{ ok: boolean; names: Record<string, string> }> =>
+      this.t.request("POST", "/api/progress/name", { combo, name }),
   };
 
   // ── Overlay UI ──

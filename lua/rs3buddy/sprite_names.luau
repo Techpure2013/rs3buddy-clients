@@ -71,6 +71,7 @@ export type SpriteName =
 	| "ability:provoke"
 	| "ability:punish"
 	| "ability:ranged"
+	| "ability:ranged_abilities"
 	| "ability:reflect"
 	| "ability:regenerate"
 	| "ability:rejuvenate"
@@ -91,9 +92,22 @@ export type SpriteName =
 	| "ability:transfigure"
 	| "ability:tsunami"
 	| "ability:volley_of_souls"
+	| "bar:adrenaline_bar"
+	| "bar:adrenaline_bar_background"
+	| "bar:adrenaline_bar_full_background"
+	| "bar:adrenaline_bar_overcharge"
+	| "bar:blue_background_bar"
+	| "bar:conjure_bar_background"
+	| "bar:green_bar"
+	| "bar:skilling_bar_beginning"
+	| "bar:skilling_bar_end"
+	| "bar:skilling_bar_middle"
+	| "bar:yellow_frontground_bar"
 	| "buff:bloat"
 	| "buff:bone_shield"
+	| "buff:buff_box"
 	| "buff:command_putrid_zombie"
+	| "buff:devotion"
 	| "buff:freedom"
 	| "buff:necrosis"
 	| "buff:putrid_zombie"
@@ -122,6 +136,9 @@ export type SpriteName =
 	| "chatbox:ironman"
 	| "chatbox:news_icon"
 	| "chatbox:quick_chat"
+	| "enemy_debuff:bloat"
+	| "enemy_debuff:defense_modified"
+	| "familiar:orb"
 	| "id11nqeck"
 	| "id198mxhv"
 	| "id1h4ro9i"
@@ -147,10 +164,13 @@ export type SpriteName =
 	| "interface:buff_bar_3d"
 	| "interface:calendar"
 	| "interface:coin_pouch"
+	| "interface:conjure_bar"
 	| "interface:conjure_bar_1"
 	| "interface:conjure_bar_2"
+	| "interface:conjure_hitsplat_end"
 	| "interface:conjure_splat_3"
 	| "interface:constitution_icon"
+	| "interface:currency_pouch"
 	| "interface:defence_abilties"
 	| "interface:disassemble"
 	| "interface:emotes"
@@ -284,7 +304,6 @@ export type SpriteName =
 	| "interface:idlqw7nf"
 	| "interface:idlrxuup"
 	| "interface:idlzj8xz"
-	| "interface:idmw3v0d"
 	| "interface:idn6bco1"
 	| "interface:idn9p8q3"
 	| "interface:idnqlji5"
@@ -319,13 +338,17 @@ export type SpriteName =
 	| "interface:idyucoyi"
 	| "interface:idzd075o"
 	| "interface:idzli5lz"
+	| "interface:invention_materials"
 	| "interface:invoke_death"
+	| "interface:lock_inventory"
 	| "interface:magic"
 	| "interface:magic_abilities"
+	| "interface:magic_teleport_spells"
 	| "interface:melee_abilities"
 	| "interface:necromancy_abilities"
 	| "interface:necromancy_conjure_hit_1"
 	| "interface:necromancy_conjure_hit_2"
+	| "interface:necromancy_conjure_hitsplat_beginning"
 	| "interface:necromancy_hit_1"
 	| "interface:necromancy_incantations"
 	| "interface:prayer_bar"
@@ -509,6 +532,7 @@ local SPRITE_NAMES: { SpriteName } = {
 	"ability:provoke",
 	"ability:punish",
 	"ability:ranged",
+	"ability:ranged_abilities",
 	"ability:reflect",
 	"ability:regenerate",
 	"ability:rejuvenate",
@@ -529,9 +553,22 @@ local SPRITE_NAMES: { SpriteName } = {
 	"ability:transfigure",
 	"ability:tsunami",
 	"ability:volley_of_souls",
+	"bar:adrenaline_bar",
+	"bar:adrenaline_bar_background",
+	"bar:adrenaline_bar_full_background",
+	"bar:adrenaline_bar_overcharge",
+	"bar:blue_background_bar",
+	"bar:conjure_bar_background",
+	"bar:green_bar",
+	"bar:skilling_bar_beginning",
+	"bar:skilling_bar_end",
+	"bar:skilling_bar_middle",
+	"bar:yellow_frontground_bar",
 	"buff:bloat",
 	"buff:bone_shield",
+	"buff:buff_box",
 	"buff:command_putrid_zombie",
+	"buff:devotion",
 	"buff:freedom",
 	"buff:necrosis",
 	"buff:putrid_zombie",
@@ -560,6 +597,9 @@ local SPRITE_NAMES: { SpriteName } = {
 	"chatbox:ironman",
 	"chatbox:news_icon",
 	"chatbox:quick_chat",
+	"enemy_debuff:bloat",
+	"enemy_debuff:defense_modified",
+	"familiar:orb",
 	"id11nqeck",
 	"id198mxhv",
 	"id1h4ro9i",
@@ -585,10 +625,13 @@ local SPRITE_NAMES: { SpriteName } = {
 	"interface:buff_bar_3d",
 	"interface:calendar",
 	"interface:coin_pouch",
+	"interface:conjure_bar",
 	"interface:conjure_bar_1",
 	"interface:conjure_bar_2",
+	"interface:conjure_hitsplat_end",
 	"interface:conjure_splat_3",
 	"interface:constitution_icon",
+	"interface:currency_pouch",
 	"interface:defence_abilties",
 	"interface:disassemble",
 	"interface:emotes",
@@ -722,7 +765,6 @@ local SPRITE_NAMES: { SpriteName } = {
 	"interface:idlqw7nf",
 	"interface:idlrxuup",
 	"interface:idlzj8xz",
-	"interface:idmw3v0d",
 	"interface:idn6bco1",
 	"interface:idn9p8q3",
 	"interface:idnqlji5",
@@ -757,13 +799,17 @@ local SPRITE_NAMES: { SpriteName } = {
 	"interface:idyucoyi",
 	"interface:idzd075o",
 	"interface:idzli5lz",
+	"interface:invention_materials",
 	"interface:invoke_death",
+	"interface:lock_inventory",
 	"interface:magic",
 	"interface:magic_abilities",
+	"interface:magic_teleport_spells",
 	"interface:melee_abilities",
 	"interface:necromancy_abilities",
 	"interface:necromancy_conjure_hit_1",
 	"interface:necromancy_conjure_hit_2",
+	"interface:necromancy_conjure_hitsplat_beginning",
 	"interface:necromancy_hit_1",
 	"interface:necromancy_incantations",
 	"interface:prayer_bar",

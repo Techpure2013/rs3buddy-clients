@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 from .transport import Transport
 from .models import (
     Position, ShaderInfo, TextureInfo, SceneSnapshot, ChatReadResult,
-    BarsReadResult, AbilitiesReadResult,
+    BarsReadResult, AbilitiesReadResult, ProgressReadResult,
     DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult,
 )
 
@@ -75,6 +75,35 @@ class _AbilitiesAPI:
         /api/abilities; recognition runs server-side.
         """
         return self._t.request("GET", "/api/abilities")
+
+
+class _ProgressAPI:
+    """Progress-bar reader namespace, reached via RS3Buddy.progress."""
+
+    def __init__(self, t: Transport) -> None:
+        self._t = t
+
+    def read(self, name: Optional[str] = None, combo: Optional[str] = None) -> ProgressReadResult:
+        """Detect on-screen progress bars (conjure timers, skilling, adrenaline, ...).
+
+        Each bar TYPE is identified by its colour signature (``combo``, or a
+        friendly ``name`` you registered) -- no training. Returns the raw
+        ``bars``, a per-type ``groups`` aggregate (flicker-proof ``stableCount``
+        plus each fill %), and per-type ``began`` / ``ended`` events. Pass
+        ``name`` or ``combo`` to read just one bar type. GET /api/progress.
+        """
+        return self._t.request("GET", "/api/progress" + _q(name=name, combo=combo))
+
+    def names(self) -> Any:
+        """The combo -> friendly-name registry (GET /api/progress/names)."""
+        return self._t.request("GET", "/api/progress/names")
+
+    def set_name(self, combo: str, name: str) -> Any:
+        """Name a bar combo so you can read it by name (empty name removes it).
+
+        POST /api/progress/name.
+        """
+        return self._t.request("POST", "/api/progress/name", {"combo": combo, "name": name})
 
 
 class _UIAPI:
@@ -181,6 +210,7 @@ class RS3Buddy:
         self.chat = _ChatAPI(self._t)
         self.bars = _BarsAPI(self._t)
         self.abilities = _AbilitiesAPI(self._t)
+        self.progress = _ProgressAPI(self._t)
         self.ui = _UIAPI(self._t)
         self.sound = _SoundAPI(self._t)
 

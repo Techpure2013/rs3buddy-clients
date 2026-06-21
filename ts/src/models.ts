@@ -613,6 +613,114 @@ export interface AbilityRect {
 }
 
 /**
+ * Result of GET /api/progress. Detects every progress bar by shape, identifies the TYPE by colour signature (`combo`, or a friendly `name` if registered), measures fill %, and tracks begin/end per type. Pass `?name=` / `?combo=` to read just one bar type.
+ */
+export interface ProgressReadResult {
+  ok: boolean;
+  /**
+   * Age of the cached glyph set this read used, in ms.
+   */
+  ageMs: number;
+  /**
+   * Number of bar TYPES on screen (== groups.length).
+   */
+  count: number;
+  /**
+   * Raw per-bar snapshot this frame.
+   */
+  bars: ProgressBar[];
+  /**
+   * Per-type aggregate (count + each fill %).
+   */
+  groups: ProgressGroup[];
+  /**
+   * Bar types that appeared this poll.
+   */
+  began: ProgressBegan[];
+  /**
+   * Bar types that went fully gone this poll.
+   */
+  ended: ProgressEnded[];
+}
+
+/**
+ * One progress bar detected this frame (raw snapshot; no stable id — bars may move).
+ */
+export interface ProgressBar {
+  /**
+   * Colour-signature key identifying the bar TYPE (sorted colorHashes).
+   */
+  combo: string;
+  /**
+   * Friendly name for this combo if one is registered, else null.
+   */
+  name: string | null;
+  /**
+   * Screen x of the bar's left edge (window px).
+   */
+  x: number;
+  /**
+   * Screen y (window px).
+   */
+  y: number;
+  /**
+   * Drawn width (window px).
+   */
+  w: number;
+  /**
+   * Fill percent, 0-100.
+   */
+  percent: number;
+  /**
+   * True once both a track + fill colour have been seen (a real bar, not a stray piece).
+   */
+  confident: boolean;
+}
+
+/**
+ * Per bar-TYPE aggregate: how many of this type are on screen + each one's fill.
+ */
+export interface ProgressGroup {
+  combo: string;
+  name: string | null;
+  /**
+   * Bars of this type detected THIS frame (can dip on a flickered frame).
+   */
+  count: number;
+  /**
+   * Flicker-proof count: the max seen across the grace window.
+   */
+  stableCount: number;
+  /**
+   * Each bar's fill percent, highest first.
+   */
+  percents: number[];
+  minPercent: number;
+  maxPercent: number;
+  confident: boolean;
+}
+
+/**
+ * A bar TYPE that just appeared this poll (count went 0 -> >0).
+ */
+export interface ProgressBegan {
+  combo: string;
+  name: string | null;
+}
+
+/**
+ * A bar TYPE that just went fully gone this poll (count -> 0 past the grace window).
+ */
+export interface ProgressEnded {
+  combo: string;
+  name: string | null;
+  /**
+   * The highest fill % this type reached before it vanished.
+   */
+  maxPercent: number;
+}
+
+/**
  * A single submittable overlay item — geometry Shape, text Billboard, or image sprite. Clean wire form of the SDK's `DrawItem` (uses the wire  {@link  ImageItem }  above). This is what `drawShape` accepts and `drawScene` accepts an array of.
  */
 export type DrawItem = Shape | Billboard | ImageItem;
@@ -1018,6 +1126,8 @@ export type WidgetType =
   | "image"
   | "divider"
   | "badge"
+  | "button"
+  | "accordion"
   | "worldLabel"
   | "worldMarker"
   | "tile";

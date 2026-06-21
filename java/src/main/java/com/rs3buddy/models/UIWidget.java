@@ -133,6 +133,8 @@ public class UIWidget {
         IMAGE("image"),
         DIVIDER("divider"),
         BADGE("badge"),
+        BUTTON("button"),
+        ACCORDION("accordion"),
         WORLD_LABEL("worldLabel"),
         WORLD_MARKER("worldMarker"),
         TILE("tile");

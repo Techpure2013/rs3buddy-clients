@@ -148,6 +148,22 @@ class RS3Buddy {
     abilities = {
         read: () => this.t.request("GET", "/api/abilities"),
     };
+    // ── Progress bars (generic progress-bar detector) ──
+    /**
+     * Detect on-screen progress bars (action progress, conjure timers, skilling,
+     * adrenaline, …). Each bar TYPE is identified by its colour signature
+     * (`combo`, or a friendly `name` you registered) — no training. Returns the
+     * raw `bars`, a per-type aggregate (`groups`, with a flicker-proof
+     * `stableCount` + each fill %), and per-type `began` / `ended` events. Pass
+     * `{ name }` or `{ combo }` to read just one bar type. GET /api/progress.
+     */
+    progress = {
+        read: (opts = {}) => this.t.request("GET", "/api/progress" + qs({ name: opts.name, combo: opts.combo })),
+        /** The combo → friendly-name registry. GET /api/progress/names. */
+        names: () => this.t.request("GET", "/api/progress/names"),
+        /** Name a bar combo so you can read it by name (empty name removes it). POST /api/progress/name. */
+        setName: (combo, name) => this.t.request("POST", "/api/progress/name", { combo, name }),
+    };
     // ── Overlay UI ──
     /**
      * Overlay UI. Author the HUD as HTML + CSS and POST it; the server compiles it

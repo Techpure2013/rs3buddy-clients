@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rs3buddy.models.AbilitiesReadResult;
 import com.rs3buddy.models.BarsReadResult;
+import com.rs3buddy.models.ProgressReadResult;
 import com.rs3buddy.models.ChatReadResult;
 import com.rs3buddy.models.FrameCaptureResult;
 import com.rs3buddy.models.PlayerNameResult;
@@ -39,6 +40,9 @@ public final class RS3Buddy {
     /** Action-bar reader namespace; reached via {@code buddy.abilities.read()}. */
     public final Abilities abilities;
 
+    /** Progress-bar reader namespace; reached via {@code buddy.progress.read()}. */
+    public final Progress progress;
+
     /** Overlay-UI namespace; reached via {@code buddy.ui.html(...)}. */
     public final UI ui;
 
@@ -50,6 +54,7 @@ public final class RS3Buddy {
         this.chat = new Chat();
         this.bars = new Bars();
         this.abilities = new Abilities();
+        this.progress = new Progress();
         this.ui = new UI();
         this.sound = new Sound();
     }
@@ -59,6 +64,7 @@ public final class RS3Buddy {
         this.chat = new Chat();
         this.bars = new Bars();
         this.abilities = new Abilities();
+        this.progress = new Progress();
         this.ui = new UI();
         this.sound = new Sound();
     }
@@ -305,6 +311,38 @@ public final class RS3Buddy {
         /** Read the action bar(s). */
         public AbilitiesReadResult read() {
             return t.request("GET", "/api/abilities", null, AbilitiesReadResult.class);
+        }
+    }
+
+    // ── Progress bars ──
+    /**
+     * Progress-bar reader (action progress, conjure timers, skilling,
+     * adrenaline, ...). Thin wrapper over GET /api/progress; each bar TYPE is
+     * identified by its colour signature ({@code combo}, or a friendly
+     * {@code name} you registered). The {@link ProgressReadResult} carries the
+     * raw {@code bars}, a per-type {@code groups} aggregate (flicker-proof
+     * {@code stableCount} + each fill %), and per-type {@code began}/{@code ended}.
+     */
+    public final class Progress {
+        /** Detect every progress bar on screen. */
+        public ProgressReadResult read() {
+            return t.request("GET", "/api/progress", null, ProgressReadResult.class);
+        }
+
+        /** Read just one bar type, by friendly {@code name} or colour-signature {@code combo}. */
+        public ProgressReadResult read(String name, String combo) {
+            return t.request("GET", "/api/progress"
+                    + q(map("name", name, "combo", combo)), null, ProgressReadResult.class);
+        }
+
+        /** The combo -&gt; friendly-name registry. */
+        public JsonNode names() {
+            return t.requestJson("GET", "/api/progress/names", null);
+        }
+
+        /** Name a bar combo so you can read it by name (empty name removes it). */
+        public JsonNode setName(String combo, String name) {
+            return t.requestJson("POST", "/api/progress/name", map("combo", combo, "name", name));
         }
     }
 

@@ -228,6 +228,43 @@
 ---@field w number
 ---@field h number
 
+---@class ProgressReadResult
+---@field ok boolean
+---@field ageMs number
+---@field count number
+---@field bars ProgressBar[]
+---@field groups ProgressGroup[]
+---@field began ProgressBegan[]
+---@field ended ProgressEnded[]
+
+---@class ProgressBar
+---@field combo string
+---@field name any
+---@field x number
+---@field y number
+---@field w number
+---@field percent number
+---@field confident boolean
+
+---@class ProgressGroup
+---@field combo string
+---@field name any
+---@field count number
+---@field stableCount number
+---@field percents number[]
+---@field minPercent number
+---@field maxPercent number
+---@field confident boolean
+
+---@class ProgressBegan
+---@field combo string
+---@field name any
+
+---@class ProgressEnded
+---@field combo string
+---@field name any
+---@field maxPercent number
+
 ---@alias DrawItem any
 
 ---@class Shape
@@ -337,7 +374,7 @@
 ---@field props? UIProps
 ---@field children? UIWidget[]
 
----@alias WidgetType "panel"|"row"|"column"|"stack"|"grid"|"spacer"|"label"|"gauge"|"image"|"divider"|"badge"|"worldLabel"|"worldMarker"|"tile"
+---@alias WidgetType "panel"|"row"|"column"|"stack"|"grid"|"spacer"|"label"|"gauge"|"image"|"divider"|"badge"|"button"|"accordion"|"worldLabel"|"worldMarker"|"tile"
 
 ---@class UIProps
 ---@field width? any

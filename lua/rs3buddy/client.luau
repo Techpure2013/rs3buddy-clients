@@ -14,6 +14,7 @@ export type SceneSnapshot = types.SceneSnapshot
 export type ChatReadResult = types.ChatReadResult
 export type BarsReadResult = types.BarsReadResult
 export type AbilitiesReadResult = types.AbilitiesReadResult
+export type ProgressReadResult = types.ProgressReadResult
 export type DrawItem = types.DrawItem
 export type PostFxPassInput = types.PostFxPassInput
 export type ShaderFxInput = types.ShaderFxInput
@@ -46,6 +47,11 @@ local AbilitiesAPI = {}
 AbilitiesAPI.__index = AbilitiesAPI
 export type AbilitiesAPI = typeof(setmetatable({} :: { _t: transport.Transport }, AbilitiesAPI))
 
+local ProgressAPI = {}
+ProgressAPI.__index = ProgressAPI
+export type ProgressAPI = typeof(setmetatable({} :: { _t: transport.Transport }, ProgressAPI))
+export type ProgressReadOptions = { name: string?, combo: string? }
+
 -- Overlay-UI + sound namespaces (client.ui / client.sound), mirroring ChatAPI.
 -- ui authors the HUD as HTML+CSS and POSTs it; the same widget engine the SDK
 -- renders runs server-side (clicks / drag / scaling all work). Your app owns the
@@ -70,6 +76,7 @@ export type RS3Buddy = typeof(setmetatable(
 		chat: ChatAPI,
 		bars: BarsAPI,
 		abilities: AbilitiesAPI,
+		progress: ProgressAPI,
 		ui: UiAPI,
 		sound: SoundAPI,
 	},
@@ -111,6 +118,24 @@ end
 -- wrapper over GET /api/abilities.
 function AbilitiesAPI.read(self: AbilitiesAPI): AbilitiesReadResult
 	return self._t:request("GET", "/api/abilities")
+end
+
+-- Detect on-screen progress bars (conjure timers, skilling, adrenaline, ...).
+-- Each bar TYPE is identified by its colour signature (`combo`, or a friendly
+-- `name` you registered) -- no training. Returns raw `bars`, a per-type `groups`
+-- aggregate (flicker-proof `stableCount` + each fill %), and per-type `began` /
+-- `ended` events. Pass opts.name / opts.combo to read just one type. GET /api/progress.
+function ProgressAPI.read(self: ProgressAPI, opts: ProgressReadOptions?): ProgressReadResult
+	local o: ProgressReadOptions = opts or {}
+	return self._t:request("GET", "/api/progress" .. q({ name = o.name, combo = o.combo }))
+end
+-- The combo -> friendly-name registry (GET /api/progress/names).
+function ProgressAPI.names(self: ProgressAPI): any
+	return self._t:request("GET", "/api/progress/names")
+end
+-- Name a bar combo so you can read it by name (empty name removes it). POST /api/progress/name.
+function ProgressAPI.setName(self: ProgressAPI, combo: string, name: string): any
+	return self._t:request("POST", "/api/progress/name", { combo = combo, name = name })
 end
 
 -- ── Overlay UI (client.ui) ──
@@ -173,6 +198,7 @@ local function new(opts: TransportOptions): RS3Buddy
 		chat = setmetatable({ _t = t }, ChatAPI),
 		bars = setmetatable({ _t = t }, BarsAPI),
 		abilities = setmetatable({ _t = t }, AbilitiesAPI),
+		progress = setmetatable({ _t = t }, ProgressAPI),
 		ui = setmetatable({ _t = t }, UiAPI),
 		sound = setmetatable({ _t = t }, SoundAPI),
 	}, RS3Buddy)

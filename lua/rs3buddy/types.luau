@@ -281,6 +281,48 @@ export type AbilityRect = {
 	h: number,
 }
 
+export type ProgressReadResult = {
+	ok: boolean,
+	ageMs: number,
+	count: number,
+	bars: {ProgressBar},
+	groups: {ProgressGroup},
+	began: {ProgressBegan},
+	ended: {ProgressEnded},
+}
+
+export type ProgressBar = {
+	combo: string,
+	name: any,
+	x: number,
+	y: number,
+	w: number,
+	percent: number,
+	confident: boolean,
+}
+
+export type ProgressGroup = {
+	combo: string,
+	name: any,
+	count: number,
+	stableCount: number,
+	percents: {number},
+	minPercent: number,
+	maxPercent: number,
+	confident: boolean,
+}
+
+export type ProgressBegan = {
+	combo: string,
+	name: any,
+}
+
+export type ProgressEnded = {
+	combo: string,
+	name: any,
+	maxPercent: number,
+}
+
 export type DrawItem = any
 
 export type Shape = {
@@ -404,7 +446,7 @@ export type UIWidget = {
 	children: {UIWidget}?,
 }
 
-export type WidgetType = "panel" | "row" | "column" | "stack" | "grid" | "spacer" | "label" | "gauge" | "image" | "divider" | "badge" | "worldLabel" | "worldMarker" | "tile"
+export type WidgetType = "panel" | "row" | "column" | "stack" | "grid" | "spacer" | "label" | "gauge" | "image" | "divider" | "badge" | "button" | "accordion" | "worldLabel" | "worldMarker" | "tile"
 
 export type UIProps = {
 	width: any?,

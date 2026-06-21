@@ -195,6 +195,38 @@ class AbilityRect(TypedDict):
     h: float
 
 
+class ProgressBar(TypedDict):
+    combo: str
+    name: str | None
+    x: float
+    y: float
+    w: float
+    percent: float
+    confident: bool
+
+
+class ProgressGroup(TypedDict):
+    combo: str
+    name: str | None
+    count: float
+    stableCount: float
+    percents: list[float]
+    minPercent: float
+    maxPercent: float
+    confident: bool
+
+
+class ProgressBegan(TypedDict):
+    combo: str
+    name: str | None
+
+
+class ProgressEnded(TypedDict):
+    combo: str
+    name: str | None
+    maxPercent: float
+
+
 class Shader(TypedDict):
     fragmentSource: str
     vertexSource: NotRequired[str]
@@ -289,6 +321,8 @@ type WidgetType = Literal[
     "image",
     "divider",
     "badge",
+    "button",
+    "accordion",
     "worldLabel",
     "worldMarker",
     "tile",
@@ -416,6 +450,16 @@ class AbilitySlot(TypedDict):
     cooldownSeconds: float | None
     usable: bool
     color: list[float]
+
+
+class ProgressReadResult(TypedDict):
+    ok: bool
+    ageMs: float
+    count: float
+    bars: list[ProgressBar]
+    groups: list[ProgressGroup]
+    began: list[ProgressBegan]
+    ended: list[ProgressEnded]
 
 
 class Anchor1(TypedDict):
@@ -585,6 +629,7 @@ class RS3buddyApi(TypedDict):
     chatReadResult: ChatReadResult
     barsReadResult: BarsReadResult
     abilitiesReadResult: AbilitiesReadResult
+    progressReadResult: ProgressReadResult
     drawItem: DrawItem
     postFxPassInput: PostFxPassInput
     shaderFxInput: ShaderFxInput
