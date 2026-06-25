@@ -1,6 +1,6 @@
 # RS3 Buddy — Developer Guide
 
-Version 0.1.1 · last updated 2026-06-21
+Version 0.1.2 · last updated 2026-06-25
 
 rs3buddy is a local SDK for building RuneScape 3 overlays and tools. Your app
 `connect()`s to a server the launcher runs, reads live game state (chat, stats,
@@ -24,7 +24,7 @@ language's **API reference**; for deeper topics, the **docs/** folder (links at 
 | TypeScript / JS | Node 18+ | `cd ts && npm install && npm run build`, then `npm install <path>/rs3buddy-clients/ts` in your project |
 | Python | Python 3.10+ | `pip install "git+https://github.com/Techpure2013/rs3buddy-clients.git#subdirectory=python"` (or `pip install ./python`) |
 | Lua / Luau | Lua 5.1+ | `luarocks install luasocket`, then vendor the `lua/rs3buddy` folder |
-| Java | JDK 11+ to use, JDK 17 to build · + Jackson | `gradle jar` in `java/` → `build/libs/rs3buddy-client-0.1.1.jar` (or `includeBuild`) — see [java/README.md](java/README.md) |
+| Java | JDK 11+ to use, JDK 17 to build · + Jackson | `gradle jar` in `java/` → `build/libs/rs3buddy-client-0.1.2.jar` (or `includeBuild`) — see [java/README.md](java/README.md) |
 
 ## Hello world
 
@@ -130,6 +130,67 @@ public class Hello {
 
 Run it with the game + launcher open: a small `Prayer: N` panel appears top-right.
 That's the whole shape of an overlay — everything else is more reads and richer UI.
+
+## Buffs
+
+`buddy.buffs` (GET `/api/buffs`) reads the buff / debuff bar. Active buffs and debuffs are returned in two separate arrays of the same `Buff` shape — distinguished by `kind`.
+
+`read()` returns `{ ok, stale, ageMs, buffs, debuffs }` where each entry is `{ kind, name, iconColorHash, value, text, rect }`. `name` is the trained sprite name (e.g. `"buff:necrosis"`) or `null` when untrained. `value` is the timer or stack count read directly from the glyph — not OCR; `null` when no number is shown. Pass a name to `read(name)` to get back a single entry (or null); the `buff:` / `debuff:` prefix is optional and matching is case-insensitive.
+
+`names()` returns the colour-hash → name registry. `name(iconColorHash, name)` trains or renames an icon (empty name removes it).
+
+```ts
+// TypeScript
+const { buffs, debuffs } = await buddy.buffs.read();
+const necrosis = await buddy.buffs.read("buff:necrosis");
+```
+```python
+# Python
+res = buddy.buffs.read()
+n = buddy.buffs.read("necrosis")
+```
+```lua
+-- Lua
+local res = buddy.buffs:read()
+local n   = buddy.buffs:read("buff:necrosis")
+```
+```java
+// Java
+BuffsReadResult res = buddy.buffs.read();
+Buff n = buddy.buffs.read("buff:necrosis");
+// getters: b.getName(), b.getValue(), b.getKind()
+```
+
+## Skills
+
+`buddy.skills` (GET `/api/skills`) reads the skills interface tab — all 29 RS3 skills in one call. Each skill carries two distinct level fields:
+
+- **`level`** — the **current live level**. Drops when a drain debuff is active (e.g. Sap), rises when boosted (e.g. an Overload). This is what you poll to detect boosts or drains in real time.
+- **`base`** — the **trained base level**. Never fluctuates. Compare against `level` to detect whether the player is boosted or drained.
+
+`read()` returns `{ ok, stale, ageMs, skills }` where each entry is `{ name, level, base, rect }`. Pass a skill name to `read(name)` to retrieve just that skill (or null). The skill name is one of the 29 RS3 skill strings (e.g. `"attack"`, `"herblore"`, `"necromancy"`); in TypeScript this argument is typed as `SkillName` and autocompletes in your editor.
+
+```ts
+// TypeScript
+const sk  = await buddy.skills.read();
+const atk = await buddy.skills.read("attack");
+```
+```python
+# Python
+sk  = buddy.skills.read()
+atk = buddy.skills.read("attack")
+```
+```lua
+-- Lua
+local sk  = buddy.skills:read()
+local atk = buddy.skills:read("attack")
+```
+```java
+// Java
+SkillsReadResult sk  = buddy.skills.read();
+Skill            atk = buddy.skills.read("attack");
+// getters: s.getName(), s.getLevel(), s.getBase()
+```
 
 ## Conventions
 

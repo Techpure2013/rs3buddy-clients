@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.
+ * Result of reading the bars (GET /api/bars). `bars` always starts with the four stat bars in fixed order (hitpoints, adrenaline, prayer, summoning), followed by every dynamic bar currently on screen — ALL from a single capture, so every reading is from the same frame (no two-endpoint drift). Check each bar's `found` / `fillPct` / `value`.
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -19,7 +19,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "ok",
     "stale",
     "ageMs",
-    "bars"
+    "bars",
+    "began",
+    "ended"
 })
 @Generated("jsonschema2pojo")
 public class BarsReadResult {
@@ -48,13 +50,29 @@ public class BarsReadResult {
     @JsonPropertyDescription("Age of the cached glyph set this read used, in ms.")
     private Double ageMs;
     /**
-     * The four status bars, in fixed order.
+     * The bars: the four stat bars (always present) followed by any dynamic bars on screen. Every entry has the same `Bar` shape.
      * (Required)
      * 
      */
     @JsonProperty("bars")
-    @JsonPropertyDescription("The four status bars, in fixed order.")
-    private List<BarValue> bars = new ArrayList<BarValue>();
+    @JsonPropertyDescription("The bars: the four stat bars (always present) followed by any dynamic bars on screen. Every entry has the same `Bar` shape.")
+    private List<Bar> bars = new ArrayList<Bar>();
+    /**
+     * Names (or combos, when unnamed) of dynamic bar types that appeared on this poll.
+     * (Required)
+     * 
+     */
+    @JsonProperty("began")
+    @JsonPropertyDescription("Names (or combos, when unnamed) of dynamic bar types that appeared on this poll.")
+    private List<String> began = new ArrayList<String>();
+    /**
+     * Names (or combos, when unnamed) of dynamic bar types that vanished on this poll.
+     * (Required)
+     * 
+     */
+    @JsonProperty("ended")
+    @JsonPropertyDescription("Names (or combos, when unnamed) of dynamic bar types that vanished on this poll.")
+    private List<String> ended = new ArrayList<String>();
 
     /**
      * 
@@ -87,13 +105,33 @@ public class BarsReadResult {
     }
 
     /**
-     * The four status bars, in fixed order.
+     * The bars: the four stat bars (always present) followed by any dynamic bars on screen. Every entry has the same `Bar` shape.
      * (Required)
      * 
      */
     @JsonProperty("bars")
-    public List<BarValue> getBars() {
+    public List<Bar> getBars() {
         return bars;
+    }
+
+    /**
+     * Names (or combos, when unnamed) of dynamic bar types that appeared on this poll.
+     * (Required)
+     * 
+     */
+    @JsonProperty("began")
+    public List<String> getBegan() {
+        return began;
+    }
+
+    /**
+     * Names (or combos, when unnamed) of dynamic bar types that vanished on this poll.
+     * (Required)
+     * 
+     */
+    @JsonProperty("ended")
+    public List<String> getEnded() {
+        return ended;
     }
 
     @Override
@@ -116,6 +154,14 @@ public class BarsReadResult {
         sb.append('=');
         sb.append(((this.bars == null)?"<null>":this.bars));
         sb.append(',');
+        sb.append("began");
+        sb.append('=');
+        sb.append(((this.began == null)?"<null>":this.began));
+        sb.append(',');
+        sb.append("ended");
+        sb.append('=');
+        sb.append(((this.ended == null)?"<null>":this.ended));
+        sb.append(',');
         if (sb.charAt((sb.length()- 1)) == ',') {
             sb.setCharAt((sb.length()- 1), ']');
         } else {
@@ -129,6 +175,8 @@ public class BarsReadResult {
         int result = 1;
         result = ((result* 31)+((this.ageMs == null)? 0 :this.ageMs.hashCode()));
         result = ((result* 31)+((this.stale == null)? 0 :this.stale.hashCode()));
+        result = ((result* 31)+((this.began == null)? 0 :this.began.hashCode()));
+        result = ((result* 31)+((this.ended == null)? 0 :this.ended.hashCode()));
         result = ((result* 31)+((this.ok == null)? 0 :this.ok.hashCode()));
         result = ((result* 31)+((this.bars == null)? 0 :this.bars.hashCode()));
         return result;
@@ -143,7 +191,7 @@ public class BarsReadResult {
             return false;
         }
         BarsReadResult rhs = ((BarsReadResult) other);
-        return (((((this.ageMs == rhs.ageMs)||((this.ageMs!= null)&&this.ageMs.equals(rhs.ageMs)))&&((this.stale == rhs.stale)||((this.stale!= null)&&this.stale.equals(rhs.stale))))&&((this.ok == rhs.ok)||((this.ok!= null)&&this.ok.equals(rhs.ok))))&&((this.bars == rhs.bars)||((this.bars!= null)&&this.bars.equals(rhs.bars))));
+        return (((((((this.ageMs == rhs.ageMs)||((this.ageMs!= null)&&this.ageMs.equals(rhs.ageMs)))&&((this.stale == rhs.stale)||((this.stale!= null)&&this.stale.equals(rhs.stale))))&&((this.began == rhs.began)||((this.began!= null)&&this.began.equals(rhs.began))))&&((this.ended == rhs.ended)||((this.ended!= null)&&this.ended.equals(rhs.ended))))&&((this.ok == rhs.ok)||((this.ok!= null)&&this.ok.equals(rhs.ok))))&&((this.bars == rhs.bars)||((this.bars!= null)&&this.bars.equals(rhs.bars))));
     }
 
 }

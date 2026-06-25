@@ -1,7 +1,8 @@
 import { Transport, TransportOptions } from "./transport";
 import type {
   Position, CaptureOptions, ShaderInfo, TextureInfo,
-  SceneSnapshot, ChatReadResult, BarsReadResult, AbilitiesReadResult, ProgressReadResult,
+  SceneSnapshot, ChatReadResult, BarsReadResult, Bar, BuffsReadResult, Buff, SkillsReadResult, Skill, SkillName,
+  AbilitiesReadResult, ProgressReadResult,
   DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult,
 } from "./models";
 
@@ -11,6 +12,12 @@ function qs(params: Record<string, string | number | undefined>): string {
   const s = p.toString();
   return s ? `?${s}` : "";
 }
+
+/** Map a friendly stat alias to its canonical bar name. */
+const BAR_ALIAS: Record<string, string> = {
+  hp: "hitpoints", hitpoints: "hitpoints", pray: "prayer", prayer: "prayer",
+  adren: "adrenaline", adrenaline: "adrenaline", summ: "summoning", summoning: "summoning",
+};
 
 /** Optional chatbox region override (window px). */
 export interface ChatReadOptions {
@@ -26,6 +33,14 @@ export interface ProgressReadOptions {
   name?: string;
   /** Raw colour-signature combo key. */
   combo?: string;
+}
+
+/** Read just one bar by stat alias or (dynamic) bar name. */
+export interface BarReadOptions {
+  /** Stat alias: "hitpoints"/"hp", "prayer"/"pray", "adrenaline"/"adren", "summoning"/"summ". */
+  type?: "hitpoints" | "hp" | "prayer" | "pray" | "adrenaline" | "adren" | "summoning" | "summ";
+  /** Any bar's name — a stat name, or a dynamic bar's registered name / colour-signature combo. */
+  name?: string;
 }
 
 /** A queued UI interaction event (click / close / minimize). */
@@ -201,12 +216,86 @@ export class RS3Buddy {
 
   // ── Status bars (HP / adrenaline / prayer / summoning) ──
   /**
-   * Read the four status bars: each bar's current `value`, `max` (when the bar
-   * shows current/max), `found`, and the located `anchor` + scanned `region`.
-   * Thin wrapper over GET /api/bars; recognition runs server-side.
+   * Read every bar in ONE shape (GET /api/bars). `bars` is the four stat bars
+   * (hitpoints, adrenaline, prayer, summoning — always present) followed by any
+   * dynamic bars on screen (skilling actions, conjure timers, …). Every entry is
+   * the same `Bar`: `fillPct` (exact, from the bar's GPU geometry) plus
+   * `value`/`max`/`text` (from the digits the game draws at the bar, when any) —
+   * fields that don't apply are null. All readings come from one capture, so
+   * they're in sync. Recognition runs server-side.
    */
-  readonly bars = {
-    read: (): Promise<BarsReadResult> => this.t.request("GET", "/api/bars"),
+  readonly bars: {
+    /** Read every bar (4 stats + any dynamic bars), each with its exact `fillPct`. */
+    read(): Promise<BarsReadResult>;
+    /** Read one bar by stat alias ("hp") or name ("prayer", or a dynamic bar's name); null if not on screen. */
+    read(nameOrOpts: string | BarReadOptions): Promise<Bar | null>;
+    /** The dynamic-bar friendly-name registry (combo → name). GET /api/bars/names. */
+    names(): Promise<{ ok: boolean; names: Record<string, string> }>;
+    /** Name (or, with an empty name, un-name) a dynamic bar combo. POST /api/bars/name. */
+    name(combo: string, name: string): Promise<{ ok: boolean; names: Record<string, string> }>;
+  } = {
+    read: (arg?: string | BarReadOptions): Promise<any> => {
+      const all = this.t.request<BarsReadResult>("GET", "/api/bars");
+      const key = typeof arg === "string" ? arg : (arg?.name ?? arg?.type);
+      if (!key) return all;
+      const want = BAR_ALIAS[String(key).toLowerCase()] ?? String(key);
+      return all.then((r) => (r.bars || []).find((b) => b.name === want) ?? null);
+    },
+    names: () => this.t.request("GET", "/api/bars/names"),
+    name: (combo: string, name: string) =>
+      this.t.request("POST", "/api/bars/name", { combo, name }),
+  };
+
+  // ── Buffs / debuffs (the buff bar) ──
+  /**
+   * Read the buff bar (GET /api/buffs). `buffs` and `debuffs` come back as
+   * separate arrays of the same `Buff` shape (the `kind` field tells them apart).
+   * Each cell's `name` is resolved from its icon's colour signature — train an
+   * unnamed icon with `buffs.name(iconColorHash, "…")`. Recognition runs server-side.
+   */
+  readonly buffs: {
+    /** Read all active buffs + debuffs (separate arrays, same `Buff` shape). */
+    read(): Promise<BuffsReadResult>;
+    /** Read one buff/debuff by name (e.g. "buff:necrosis", or just "necrosis"); null if not active. */
+    read(name: string): Promise<Buff | null>;
+    /** The buff/debuff icon-name registry (iconColorHash → name). GET /api/buffs/names. */
+    names(): Promise<{ ok: boolean; names: Record<string, string> }>;
+    /** Name (or, with an empty name, un-name) an icon by its `iconColorHash`. POST /api/buffs/name. */
+    name(iconColorHash: number | string, name: string): Promise<{ ok: boolean; names: Record<string, string> }>;
+  } = {
+    read: (name?: string): Promise<any> => {
+      const all = this.t.request<BuffsReadResult>("GET", "/api/buffs");
+      if (!name) return all;
+      // Match with or without the sprite prefix: "buff:necrosis" === "necrosis".
+      const bare = (s: string) => (s.includes(":") ? s.split(":").pop()! : s).toLowerCase();
+      const want = bare(name);
+      return all.then((r) => [...(r.buffs || []), ...(r.debuffs || [])]
+        .find((b) => b.name != null && bare(b.name) === want) ?? null);
+    },
+    names: () => this.t.request("GET", "/api/buffs/names"),
+    name: (iconColorHash: number | string, name: string) =>
+      this.t.request("POST", "/api/buffs/name", { colorHash: iconColorHash, name }),
+  };
+
+  // ── Skills (the skills interface) ──
+  /**
+   * Read the skills interface (GET /api/skills). With no argument, returns every
+   * skill cell on screen — each with its current `level` and `base` (trained)
+   * level. Pass a skill name ("attack", "herblore", …) to get just that one
+   * `Skill`, or null if it isn't on screen. Recognition runs server-side.
+   */
+  readonly skills: {
+    /** Read every skill currently on screen (each with current `level` + `base`). */
+    read(): Promise<SkillsReadResult>;
+    /** Read one skill by name; `SkillName` ("attack", "herblore", …) autocompletes. null if not on screen. */
+    read(name: SkillName | (string & {})): Promise<Skill | null>;
+  } = {
+    read: (name?: SkillName | (string & {})): Promise<any> => {
+      const all = this.t.request<SkillsReadResult>("GET", "/api/skills");
+      if (!name) return all;
+      const want = String(name).toLowerCase();
+      return all.then((r) => (r.skills || []).find((s) => s.name.toLowerCase() === want) ?? null);
+    },
   };
 
   // ── Ability bars (action bar slots) ──
@@ -227,6 +316,11 @@ export class RS3Buddy {
    * raw `bars`, a per-type aggregate (`groups`, with a flicker-proof
    * `stableCount` + each fill %), and per-type `began` / `ended` events. Pass
    * `{ name }` or `{ combo }` to read just one bar type. GET /api/progress.
+   */
+  /**
+   * @deprecated Dynamic bars are now part of the unified `bars` namespace — they
+   * appear in `bars.read()` alongside the stat bars with the same `Bar` shape.
+   * Kept for back-compat; prefer `buddy.bars`.
    */
   readonly progress = {
     read: (opts: ProgressReadOptions = {}): Promise<ProgressReadResult> =>

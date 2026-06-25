@@ -1,11 +1,15 @@
 
 package com.rs3buddy.models;
 
+import java.util.HashMap;
+import java.util.Map;
 import javax.annotation.processing.Generated;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -23,6 +27,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "entityKind",
     "chatReadResult",
     "barsReadResult",
+    "buffsReadResult",
+    "skillsReadResult",
+    "skillName",
     "abilitiesReadResult",
     "progressReadResult",
     "drawItem",
@@ -136,13 +143,37 @@ public class RS3buddyApi {
     @JsonPropertyDescription("Result of reading the chatbox (GET /api/chat).")
     private ChatReadResult chatReadResult;
     /**
-     * Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.
+     * Result of reading the bars (GET /api/bars). `bars` always starts with the four stat bars in fixed order (hitpoints, adrenaline, prayer, summoning), followed by every dynamic bar currently on screen — ALL from a single capture, so every reading is from the same frame (no two-endpoint drift). Check each bar's `found` / `fillPct` / `value`.
      * (Required)
      * 
      */
     @JsonProperty("barsReadResult")
-    @JsonPropertyDescription("Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.")
+    @JsonPropertyDescription("Result of reading the bars (GET /api/bars). `bars` always starts with the four stat bars in fixed order (hitpoints, adrenaline, prayer, summoning), followed by every dynamic bar currently on screen \u2014 ALL from a single capture, so every reading is from the same frame (no two-endpoint drift). Check each bar's `found` / `fillPct` / `value`.")
     private BarsReadResult barsReadResult;
+    /**
+     * Result of reading the buff bar (GET /api/buffs). Buffs and debuffs are returned in separate arrays — both made of the same `Buff` shape — ALL from a single capture, so every reading is from the same frame.
+     * (Required)
+     * 
+     */
+    @JsonProperty("buffsReadResult")
+    @JsonPropertyDescription("Result of reading the buff bar (GET /api/buffs). Buffs and debuffs are returned in separate arrays \u2014 both made of the same `Buff` shape \u2014 ALL from a single capture, so every reading is from the same frame.")
+    private BuffsReadResult buffsReadResult;
+    /**
+     * Result of reading the skills interface (GET /api/skills) — one `Skill` per skill cell currently on screen, all from a single capture.
+     * (Required)
+     * 
+     */
+    @JsonProperty("skillsReadResult")
+    @JsonPropertyDescription("Result of reading the skills interface (GET /api/skills) \u2014 one `Skill` per skill cell currently on screen, all from a single capture.")
+    private SkillsReadResult skillsReadResult;
+    /**
+     * The RS3 skills, by name — the value of `Skill.name` and the argument to `skills.read(name)`. (These are the icon names trained in sprites.json as `skill:<name>`, with the `skill:` prefix stripped.)
+     * (Required)
+     * 
+     */
+    @JsonProperty("skillName")
+    @JsonPropertyDescription("The RS3 skills, by name \u2014 the value of `Skill.name` and the argument to `skills.read(name)`. (These are the icon names trained in sprites.json as `skill:<name>`, with the `skill:` prefix stripped.)")
+    private RS3buddyApi.SkillName skillName;
     /**
      * Result of reading the action bar(s) (GET /api/abilities). `abilities` is in reading order — rows top-to-bottom, then left-to-right.
      * (Required)
@@ -339,13 +370,43 @@ public class RS3buddyApi {
     }
 
     /**
-     * Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.
+     * Result of reading the bars (GET /api/bars). `bars` always starts with the four stat bars in fixed order (hitpoints, adrenaline, prayer, summoning), followed by every dynamic bar currently on screen — ALL from a single capture, so every reading is from the same frame (no two-endpoint drift). Check each bar's `found` / `fillPct` / `value`.
      * (Required)
      * 
      */
     @JsonProperty("barsReadResult")
     public BarsReadResult getBarsReadResult() {
         return barsReadResult;
+    }
+
+    /**
+     * Result of reading the buff bar (GET /api/buffs). Buffs and debuffs are returned in separate arrays — both made of the same `Buff` shape — ALL from a single capture, so every reading is from the same frame.
+     * (Required)
+     * 
+     */
+    @JsonProperty("buffsReadResult")
+    public BuffsReadResult getBuffsReadResult() {
+        return buffsReadResult;
+    }
+
+    /**
+     * Result of reading the skills interface (GET /api/skills) — one `Skill` per skill cell currently on screen, all from a single capture.
+     * (Required)
+     * 
+     */
+    @JsonProperty("skillsReadResult")
+    public SkillsReadResult getSkillsReadResult() {
+        return skillsReadResult;
+    }
+
+    /**
+     * The RS3 skills, by name — the value of `Skill.name` and the argument to `skills.read(name)`. (These are the icon names trained in sprites.json as `skill:<name>`, with the `skill:` prefix stripped.)
+     * (Required)
+     * 
+     */
+    @JsonProperty("skillName")
+    public RS3buddyApi.SkillName getSkillName() {
+        return skillName;
     }
 
     /**
@@ -488,6 +549,18 @@ public class RS3buddyApi {
         sb.append('=');
         sb.append(((this.barsReadResult == null)?"<null>":this.barsReadResult));
         sb.append(',');
+        sb.append("buffsReadResult");
+        sb.append('=');
+        sb.append(((this.buffsReadResult == null)?"<null>":this.buffsReadResult));
+        sb.append(',');
+        sb.append("skillsReadResult");
+        sb.append('=');
+        sb.append(((this.skillsReadResult == null)?"<null>":this.skillsReadResult));
+        sb.append(',');
+        sb.append("skillName");
+        sb.append('=');
+        sb.append(((this.skillName == null)?"<null>":this.skillName));
+        sb.append(',');
         sb.append("abilitiesReadResult");
         sb.append('=');
         sb.append(((this.abilitiesReadResult == null)?"<null>":this.abilitiesReadResult));
@@ -532,27 +605,30 @@ public class RS3buddyApi {
     public int hashCode() {
         int result = 1;
         result = ((result* 31)+((this.entityKind == null)? 0 :this.entityKind.hashCode()));
-        result = ((result* 31)+((this.chatReadResult == null)? 0 :this.chatReadResult.hashCode()));
-        result = ((result* 31)+((this.drawInfo == null)? 0 :this.drawInfo.hashCode()));
         result = ((result* 31)+((this.textureInfo == null)? 0 :this.textureInfo.hashCode()));
-        result = ((result* 31)+((this.shaderFxInput == null)? 0 :this.shaderFxInput.hashCode()));
         result = ((result* 31)+((this.drawItem == null)? 0 :this.drawItem.hashCode()));
         result = ((result* 31)+((this.playerInfo == null)? 0 :this.playerInfo.hashCode()));
         result = ((result* 31)+((this.worldPos == null)? 0 :this.worldPos.hashCode()));
         result = ((result* 31)+((this.chunkCoord == null)? 0 :this.chunkCoord.hashCode()));
+        result = ((result* 31)+((this.skillName == null)? 0 :this.skillName.hashCode()));
+        result = ((result* 31)+((this.skillsReadResult == null)? 0 :this.skillsReadResult.hashCode()));
+        result = ((result* 31)+((this.progressReadResult == null)? 0 :this.progressReadResult.hashCode()));
+        result = ((result* 31)+((this.postFxPassInput == null)? 0 :this.postFxPassInput.hashCode()));
+        result = ((result* 31)+((this.captureOptions == null)? 0 :this.captureOptions.hashCode()));
+        result = ((result* 31)+((this.tileCoord == null)? 0 :this.tileCoord.hashCode()));
+        result = ((result* 31)+((this.sceneSnapshot == null)? 0 :this.sceneSnapshot.hashCode()));
+        result = ((result* 31)+((this.abilitiesReadResult == null)? 0 :this.abilitiesReadResult.hashCode()));
+        result = ((result* 31)+((this.chatReadResult == null)? 0 :this.chatReadResult.hashCode()));
+        result = ((result* 31)+((this.drawInfo == null)? 0 :this.drawInfo.hashCode()));
+        result = ((result* 31)+((this.shaderFxInput == null)? 0 :this.shaderFxInput.hashCode()));
         result = ((result* 31)+((this.barsReadResult == null)? 0 :this.barsReadResult.hashCode()));
         result = ((result* 31)+((this.frameCaptureResult == null)? 0 :this.frameCaptureResult.hashCode()));
         result = ((result* 31)+((this.playerNameResult == null)? 0 :this.playerNameResult.hashCode()));
-        result = ((result* 31)+((this.progressReadResult == null)? 0 :this.progressReadResult.hashCode()));
-        result = ((result* 31)+((this.postFxPassInput == null)? 0 :this.postFxPassInput.hashCode()));
         result = ((result* 31)+((this.position == null)? 0 :this.position.hashCode()));
-        result = ((result* 31)+((this.captureOptions == null)? 0 :this.captureOptions.hashCode()));
-        result = ((result* 31)+((this.tileCoord == null)? 0 :this.tileCoord.hashCode()));
         result = ((result* 31)+((this.uiWidget == null)? 0 :this.uiWidget.hashCode()));
         result = ((result* 31)+((this.shaderInfo == null)? 0 :this.shaderInfo.hashCode()));
-        result = ((result* 31)+((this.sceneSnapshot == null)? 0 :this.sceneSnapshot.hashCode()));
+        result = ((result* 31)+((this.buffsReadResult == null)? 0 :this.buffsReadResult.hashCode()));
         result = ((result* 31)+((this.entity == null)? 0 :this.entity.hashCode()));
-        result = ((result* 31)+((this.abilitiesReadResult == null)? 0 :this.abilitiesReadResult.hashCode()));
         return result;
     }
 
@@ -565,7 +641,79 @@ public class RS3buddyApi {
             return false;
         }
         RS3buddyApi rhs = ((RS3buddyApi) other);
-        return (((((((((((((((((((((((this.entityKind == rhs.entityKind)||((this.entityKind!= null)&&this.entityKind.equals(rhs.entityKind)))&&((this.chatReadResult == rhs.chatReadResult)||((this.chatReadResult!= null)&&this.chatReadResult.equals(rhs.chatReadResult))))&&((this.drawInfo == rhs.drawInfo)||((this.drawInfo!= null)&&this.drawInfo.equals(rhs.drawInfo))))&&((this.textureInfo == rhs.textureInfo)||((this.textureInfo!= null)&&this.textureInfo.equals(rhs.textureInfo))))&&((this.shaderFxInput == rhs.shaderFxInput)||((this.shaderFxInput!= null)&&this.shaderFxInput.equals(rhs.shaderFxInput))))&&((this.drawItem == rhs.drawItem)||((this.drawItem!= null)&&this.drawItem.equals(rhs.drawItem))))&&((this.playerInfo == rhs.playerInfo)||((this.playerInfo!= null)&&this.playerInfo.equals(rhs.playerInfo))))&&((this.worldPos == rhs.worldPos)||((this.worldPos!= null)&&this.worldPos.equals(rhs.worldPos))))&&((this.chunkCoord == rhs.chunkCoord)||((this.chunkCoord!= null)&&this.chunkCoord.equals(rhs.chunkCoord))))&&((this.barsReadResult == rhs.barsReadResult)||((this.barsReadResult!= null)&&this.barsReadResult.equals(rhs.barsReadResult))))&&((this.frameCaptureResult == rhs.frameCaptureResult)||((this.frameCaptureResult!= null)&&this.frameCaptureResult.equals(rhs.frameCaptureResult))))&&((this.playerNameResult == rhs.playerNameResult)||((this.playerNameResult!= null)&&this.playerNameResult.equals(rhs.playerNameResult))))&&((this.progressReadResult == rhs.progressReadResult)||((this.progressReadResult!= null)&&this.progressReadResult.equals(rhs.progressReadResult))))&&((this.postFxPassInput == rhs.postFxPassInput)||((this.postFxPassInput!= null)&&this.postFxPassInput.equals(rhs.postFxPassInput))))&&((this.position == rhs.position)||((this.position!= null)&&this.position.equals(rhs.position))))&&((this.captureOptions == rhs.captureOptions)||((this.captureOptions!= null)&&this.captureOptions.equals(rhs.captureOptions))))&&((this.tileCoord == rhs.tileCoord)||((this.tileCoord!= null)&&this.tileCoord.equals(rhs.tileCoord))))&&((this.uiWidget == rhs.uiWidget)||((this.uiWidget!= null)&&this.uiWidget.equals(rhs.uiWidget))))&&((this.shaderInfo == rhs.shaderInfo)||((this.shaderInfo!= null)&&this.shaderInfo.equals(rhs.shaderInfo))))&&((this.sceneSnapshot == rhs.sceneSnapshot)||((this.sceneSnapshot!= null)&&this.sceneSnapshot.equals(rhs.sceneSnapshot))))&&((this.entity == rhs.entity)||((this.entity!= null)&&this.entity.equals(rhs.entity))))&&((this.abilitiesReadResult == rhs.abilitiesReadResult)||((this.abilitiesReadResult!= null)&&this.abilitiesReadResult.equals(rhs.abilitiesReadResult))));
+        return ((((((((((((((((((((((((((this.entityKind == rhs.entityKind)||((this.entityKind!= null)&&this.entityKind.equals(rhs.entityKind)))&&((this.textureInfo == rhs.textureInfo)||((this.textureInfo!= null)&&this.textureInfo.equals(rhs.textureInfo))))&&((this.drawItem == rhs.drawItem)||((this.drawItem!= null)&&this.drawItem.equals(rhs.drawItem))))&&((this.playerInfo == rhs.playerInfo)||((this.playerInfo!= null)&&this.playerInfo.equals(rhs.playerInfo))))&&((this.worldPos == rhs.worldPos)||((this.worldPos!= null)&&this.worldPos.equals(rhs.worldPos))))&&((this.chunkCoord == rhs.chunkCoord)||((this.chunkCoord!= null)&&this.chunkCoord.equals(rhs.chunkCoord))))&&((this.skillName == rhs.skillName)||((this.skillName!= null)&&this.skillName.equals(rhs.skillName))))&&((this.skillsReadResult == rhs.skillsReadResult)||((this.skillsReadResult!= null)&&this.skillsReadResult.equals(rhs.skillsReadResult))))&&((this.progressReadResult == rhs.progressReadResult)||((this.progressReadResult!= null)&&this.progressReadResult.equals(rhs.progressReadResult))))&&((this.postFxPassInput == rhs.postFxPassInput)||((this.postFxPassInput!= null)&&this.postFxPassInput.equals(rhs.postFxPassInput))))&&((this.captureOptions == rhs.captureOptions)||((this.captureOptions!= null)&&this.captureOptions.equals(rhs.captureOptions))))&&((this.tileCoord == rhs.tileCoord)||((this.tileCoord!= null)&&this.tileCoord.equals(rhs.tileCoord))))&&((this.sceneSnapshot == rhs.sceneSnapshot)||((this.sceneSnapshot!= null)&&this.sceneSnapshot.equals(rhs.sceneSnapshot))))&&((this.abilitiesReadResult == rhs.abilitiesReadResult)||((this.abilitiesReadResult!= null)&&this.abilitiesReadResult.equals(rhs.abilitiesReadResult))))&&((this.chatReadResult == rhs.chatReadResult)||((this.chatReadResult!= null)&&this.chatReadResult.equals(rhs.chatReadResult))))&&((this.drawInfo == rhs.drawInfo)||((this.drawInfo!= null)&&this.drawInfo.equals(rhs.drawInfo))))&&((this.shaderFxInput == rhs.shaderFxInput)||((this.shaderFxInput!= null)&&this.shaderFxInput.equals(rhs.shaderFxInput))))&&((this.barsReadResult == rhs.barsReadResult)||((this.barsReadResult!= null)&&this.barsReadResult.equals(rhs.barsReadResult))))&&((this.frameCaptureResult == rhs.frameCaptureResult)||((this.frameCaptureResult!= null)&&this.frameCaptureResult.equals(rhs.frameCaptureResult))))&&((this.playerNameResult == rhs.playerNameResult)||((this.playerNameResult!= null)&&this.playerNameResult.equals(rhs.playerNameResult))))&&((this.position == rhs.position)||((this.position!= null)&&this.position.equals(rhs.position))))&&((this.uiWidget == rhs.uiWidget)||((this.uiWidget!= null)&&this.uiWidget.equals(rhs.uiWidget))))&&((this.shaderInfo == rhs.shaderInfo)||((this.shaderInfo!= null)&&this.shaderInfo.equals(rhs.shaderInfo))))&&((this.buffsReadResult == rhs.buffsReadResult)||((this.buffsReadResult!= null)&&this.buffsReadResult.equals(rhs.buffsReadResult))))&&((this.entity == rhs.entity)||((this.entity!= null)&&this.entity.equals(rhs.entity))));
+    }
+
+
+    /**
+     * The RS3 skills, by name — the value of `Skill.name` and the argument to `skills.read(name)`. (These are the icon names trained in sprites.json as `skill:<name>`, with the `skill:` prefix stripped.)
+     * 
+     */
+    @Generated("jsonschema2pojo")
+    public enum SkillName {
+
+        ATTACK("attack"),
+        DEFENCE("defence"),
+        STRENGTH("strength"),
+        CONSTITUTION("constitution"),
+        RANGED("ranged"),
+        PRAYER("prayer"),
+        MAGIC("magic"),
+        COOKING("cooking"),
+        WOODCUTTING("woodcutting"),
+        FLETCHING("fletching"),
+        FISHING("fishing"),
+        FIREMAKING("firemaking"),
+        CRAFTING("crafting"),
+        SMITHING("smithing"),
+        MINING("mining"),
+        HERBLORE("herblore"),
+        AGILITY("agility"),
+        THIEVING("thieving"),
+        SLAYER("slayer"),
+        FARMING("farming"),
+        RUNECRAFTING("runecrafting"),
+        HUNTER("hunter"),
+        CONSTRUCTION("construction"),
+        SUMMONING("summoning"),
+        DUNGEONEERING("dungeoneering"),
+        DIVINATION("divination"),
+        INVENTION("invention"),
+        ARCHAEOLOGY("archaeology"),
+        NECROMANCY("necromancy");
+        private final String value;
+        private final static Map<String, RS3buddyApi.SkillName> CONSTANTS = new HashMap<String, RS3buddyApi.SkillName>();
+
+        static {
+            for (RS3buddyApi.SkillName c: values()) {
+                CONSTANTS.put(c.value, c);
+            }
+        }
+
+        SkillName(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return this.value;
+        }
+
+        @JsonValue
+        public String value() {
+            return this.value;
+        }
+
+        @JsonCreator
+        public static RS3buddyApi.SkillName fromValue(String value) {
+            RS3buddyApi.SkillName constant = CONSTANTS.get(value);
+            if (constant == null) {
+                throw new IllegalArgumentException(value);
+            } else {
+                return constant;
+            }
+        }
+
     }
 
 }

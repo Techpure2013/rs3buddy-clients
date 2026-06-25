@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rs3buddy"
-version = "0.1.1"
+version = "0.1.2"
 description = "rs3buddy HTTP client (Python) — typed wrapper over the rs3buddy server."
 requires-python = ">=3.10"
 dependencies = []

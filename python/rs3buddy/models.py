@@ -171,9 +171,6 @@ class ChatBox(TypedDict):
     y1: float
 
 
-type BarName = Literal["hitpoints", "adrenaline", "prayer", "summoning"]
-
-
 class BarRect(TypedDict):
     x: float
     y: float
@@ -181,11 +178,51 @@ class BarRect(TypedDict):
     h: float
 
 
-class BarBox(TypedDict):
-    x0: float
-    y0: float
-    x1: float
-    y1: float
+class BuffRect(TypedDict):
+    x: float
+    y: float
+    w: float
+    h: float
+
+
+class SkillRect(TypedDict):
+    x: float
+    y: float
+    w: float
+    h: float
+
+
+type SkillName = Literal[
+    "attack",
+    "defence",
+    "strength",
+    "constitution",
+    "ranged",
+    "prayer",
+    "magic",
+    "cooking",
+    "woodcutting",
+    "fletching",
+    "fishing",
+    "firemaking",
+    "crafting",
+    "smithing",
+    "mining",
+    "herblore",
+    "agility",
+    "thieving",
+    "slayer",
+    "farming",
+    "runecrafting",
+    "hunter",
+    "construction",
+    "summoning",
+    "dungeoneering",
+    "divination",
+    "invention",
+    "archaeology",
+    "necromancy",
+]
 
 
 class AbilityRect(TypedDict):
@@ -201,6 +238,7 @@ class ProgressBar(TypedDict):
     x: float
     y: float
     w: float
+    h: float
     percent: float
     confident: bool
 
@@ -430,14 +468,31 @@ class ChatLocate(TypedDict):
     box: ChatBox
 
 
-class BarValue(TypedDict):
-    name: BarName
+class Bar(TypedDict):
+    name: str
+    combo: str | None
     found: bool
+    fillPct: float | None
     value: float | None
     max: float | None
-    text: str
-    anchor: BarRect | None
-    region: BarBox | None
+    text: str | None
+    rect: BarRect | None
+
+
+class Buff(TypedDict):
+    kind: Literal["buff", "debuff"]
+    name: str | None
+    iconColorHash: float | None
+    value: float | None
+    text: str | None
+    rect: BuffRect
+
+
+class Skill(TypedDict):
+    name: str
+    level: float | None
+    base: float | None
+    rect: SkillRect
 
 
 class AbilitySlot(TypedDict):
@@ -575,7 +630,24 @@ class BarsReadResult(TypedDict):
     ok: bool
     stale: bool
     ageMs: float
-    bars: list[BarValue]
+    bars: list[Bar]
+    began: list[str]
+    ended: list[str]
+
+
+class BuffsReadResult(TypedDict):
+    ok: bool
+    stale: bool
+    ageMs: float
+    buffs: list[Buff]
+    debuffs: list[Buff]
+
+
+class SkillsReadResult(TypedDict):
+    ok: bool
+    stale: bool
+    ageMs: float
+    skills: list[Skill]
 
 
 class AbilitiesReadResult(TypedDict):
@@ -628,6 +700,9 @@ class RS3buddyApi(TypedDict):
     entityKind: EntityKind
     chatReadResult: ChatReadResult
     barsReadResult: BarsReadResult
+    buffsReadResult: BuffsReadResult
+    skillsReadResult: SkillsReadResult
+    skillName: SkillName
     abilitiesReadResult: AbilitiesReadResult
     progressReadResult: ProgressReadResult
     drawItem: DrawItem

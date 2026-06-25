@@ -180,18 +180,19 @@
 ---@field ok boolean
 ---@field stale boolean
 ---@field ageMs number
----@field bars BarValue[]
+---@field bars Bar[]
+---@field began string[]
+---@field ended string[]
 
----@class BarValue
----@field name BarName
+---@class Bar
+---@field name string
+---@field combo any
 ---@field found boolean
+---@field fillPct any
 ---@field value any
 ---@field max any
----@field text string
----@field anchor any
----@field region any
-
----@alias BarName "hitpoints"|"adrenaline"|"prayer"|"summoning"
+---@field text any
+---@field rect any
 
 ---@class BarRect
 ---@field x number
@@ -199,11 +200,46 @@
 ---@field w number
 ---@field h number
 
----@class BarBox
----@field x0 number
----@field y0 number
----@field x1 number
----@field y1 number
+---@class BuffsReadResult
+---@field ok boolean
+---@field stale boolean
+---@field ageMs number
+---@field buffs Buff[]
+---@field debuffs Buff[]
+
+---@class Buff
+---@field kind "buff"|"debuff"
+---@field name any
+---@field iconColorHash any
+---@field value any
+---@field text any
+---@field rect BuffRect
+
+---@class BuffRect
+---@field x number
+---@field y number
+---@field w number
+---@field h number
+
+---@class SkillsReadResult
+---@field ok boolean
+---@field stale boolean
+---@field ageMs number
+---@field skills Skill[]
+
+---@class Skill
+---@field name string
+---@field level any
+---@field base any
+---@field rect SkillRect
+
+---@class SkillRect
+---@field x number
+---@field y number
+---@field w number
+---@field h number
+
+---@alias SkillName "attack"|"defence"|"strength"|"constitution"|"ranged"|"prayer"|"magic"|"cooking"|"woodcutting"|"fletching"|"fishing"|"firemaking"|"crafting"|"smithing"|"mining"|"herblore"|"agility"|"thieving"|"slayer"|"farming"|"runecrafting"|"hunter"|"construction"|"summoning"|"dungeoneering"|"divination"|"invention"|"archaeology"|"necromancy"
 
 ---@class AbilitiesReadResult
 ---@field ok boolean
@@ -243,6 +279,7 @@
 ---@field x number
 ---@field y number
 ---@field w number
+---@field h number
 ---@field percent number
 ---@field confident boolean
 

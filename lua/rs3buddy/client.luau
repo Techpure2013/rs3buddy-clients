@@ -13,6 +13,12 @@ export type TextureInfo = types.TextureInfo
 export type SceneSnapshot = types.SceneSnapshot
 export type ChatReadResult = types.ChatReadResult
 export type BarsReadResult = types.BarsReadResult
+export type Bar = types.Bar
+export type BuffsReadResult = types.BuffsReadResult
+export type Buff = types.Buff
+export type SkillsReadResult = types.SkillsReadResult
+export type Skill = types.Skill
+export type SkillName = types.SkillName
 export type AbilitiesReadResult = types.AbilitiesReadResult
 export type ProgressReadResult = types.ProgressReadResult
 export type DrawItem = types.DrawItem
@@ -41,7 +47,36 @@ export type ChatReadOptions = { x0: number?, y0: number?, x1: number?, y1: numbe
 -- mirroring ChatAPI. Both are param-free reads.
 local BarsAPI = {}
 BarsAPI.__index = BarsAPI
-export type BarsAPI = typeof(setmetatable({} :: { _t: transport.Transport }, BarsAPI))
+export type BarsAPI = typeof(setmetatable(
+	{} :: {
+		_t: transport.Transport,
+		-- Overloaded: read() -> all bars; read(name) -> just that one bar (or nil).
+		read: ((self: BarsAPI) -> BarsReadResult) & ((self: BarsAPI, name: string) -> Bar?),
+	},
+	BarsAPI
+))
+
+local BuffsAPI = {}
+BuffsAPI.__index = BuffsAPI
+export type BuffsAPI = typeof(setmetatable(
+	{} :: {
+		_t: transport.Transport,
+		-- Overloaded: read() -> all buffs+debuffs; read(name) -> just that one (or nil).
+		read: ((self: BuffsAPI) -> BuffsReadResult) & ((self: BuffsAPI, name: string) -> Buff?),
+	},
+	BuffsAPI
+))
+
+local SkillsAPI = {}
+SkillsAPI.__index = SkillsAPI
+export type SkillsAPI = typeof(setmetatable(
+	{} :: {
+		_t: transport.Transport,
+		-- Overloaded: read() -> all skills; read(name) -> just that one skill (or nil).
+		read: ((self: SkillsAPI) -> SkillsReadResult) & ((self: SkillsAPI, name: SkillName) -> Skill?),
+	},
+	SkillsAPI
+))
 
 local AbilitiesAPI = {}
 AbilitiesAPI.__index = AbilitiesAPI
@@ -75,6 +110,8 @@ export type RS3Buddy = typeof(setmetatable(
 		_t: transport.Transport,
 		chat: ChatAPI,
 		bars: BarsAPI,
+		buffs: BuffsAPI,
+		skills: SkillsAPI,
 		abilities: AbilitiesAPI,
 		progress: ProgressAPI,
 		ui: UiAPI,
@@ -108,10 +145,103 @@ function ChatAPI.read(self: ChatAPI, opts: ChatReadOptions?): ChatReadResult
 	return self._t:request("GET", "/api/chat" .. q({ x0 = o.x0, y0 = o.y0, x1 = o.x1, y1 = o.y1 }))
 end
 
--- Read the four status bars (HP / adrenaline / prayer / summoning). Thin wrapper
--- over GET /api/bars; each entry: { name, found, value, max, text, anchor, region }.
-function BarsAPI.read(self: BarsAPI): BarsReadResult
-	return self._t:request("GET", "/api/bars")
+-- Map a friendly stat alias to its canonical bar name.
+local BAR_ALIAS: { [string]: string } = {
+	hp = "hitpoints", hitpoints = "hitpoints", pray = "prayer", prayer = "prayer",
+	adren = "adrenaline", adrenaline = "adrenaline", summ = "summoning", summoning = "summoning",
+}
+
+-- Read the bars (GET /api/bars). With no argument, returns the full result:
+-- `bars` is the four stat bars (hitpoints, adrenaline, prayer, summoning)
+-- followed by any dynamic bars on screen (skilling, conjure timers, ...), each
+-- the SAME shape -- `fillPct` (exact, from geometry) plus `value`/`max`/`text`
+-- (from the digits drawn at the bar, when any). All from one capture, in sync.
+-- With a `name` (a stat alias like "hp", or any bar's name) returns just that
+-- one bar, or nil if it is not on screen.
+function BarsAPI.read(self: BarsAPI, name: string?): any
+	local result = self._t:request("GET", "/api/bars")
+	if not name then
+		return result
+	end
+	local want = BAR_ALIAS[string.lower(name)] or name
+	local r = result :: any
+	if type(r) == "table" and type(r.bars) == "table" then
+		for _, bar in ipairs(r.bars) do
+			if bar.name == want then
+				return bar
+			end
+		end
+	end
+	return nil
+end
+-- The dynamic-bar friendly-name registry (combo -> name). GET /api/bars/names.
+function BarsAPI.names(self: BarsAPI): any
+	return self._t:request("GET", "/api/bars/names")
+end
+-- Name (or, with an empty name, un-name) a dynamic bar combo. POST /api/bars/name.
+function BarsAPI.name(self: BarsAPI, combo: string, name: string): any
+	return self._t:request("POST", "/api/bars/name", { combo = combo, name = name })
+end
+
+-- Strip an optional sprite prefix and lower-case: "buff:necrosis" -> "necrosis".
+local function bareBuffName(s: string): string
+	local i = string.find(s, ":")
+	return string.lower(if i then string.sub(s, i + 1) else s)
+end
+-- Read the buff bar (GET /api/buffs). With no argument, returns the full result:
+-- `buffs` and `debuffs` as separate lists of the SAME shape (`kind` tells them
+-- apart), each with `name` (from its icon colour), `value` (timer/stack), `text`,
+-- `rect`. With a `name` ("buff:necrosis" or just "necrosis" -- prefix optional)
+-- returns just that one buff/debuff, or nil if it is not active.
+function BuffsAPI.read(self: BuffsAPI, name: string?): any
+	local result = self._t:request("GET", "/api/buffs")
+	if not name then
+		return result
+	end
+	local want = bareBuffName(name)
+	local r = result :: any
+	local function scan(list: any): any
+		if type(list) == "table" then
+			for _, b in ipairs(list) do
+				if b.name ~= nil and bareBuffName(b.name) == want then
+					return b
+				end
+			end
+		end
+		return nil
+	end
+	if type(r) == "table" then
+		return scan(r.buffs) or scan(r.debuffs)
+	end
+	return nil
+end
+-- The buff/debuff icon-name registry (iconColorHash -> name). GET /api/buffs/names.
+function BuffsAPI.names(self: BuffsAPI): any
+	return self._t:request("GET", "/api/buffs/names")
+end
+-- Name (or, with an empty name, un-name) an icon by its iconColorHash. POST /api/buffs/name.
+function BuffsAPI.name(self: BuffsAPI, iconColorHash: any, name: string): any
+	return self._t:request("POST", "/api/buffs/name", { colorHash = iconColorHash, name = name })
+end
+
+-- Read the skills interface (GET /api/skills). With no argument, returns every
+-- skill on screen (each with current `level` + `base`). With a `name` (a SkillName
+-- like "attack") returns just that one skill, or nil if it is not on screen.
+function SkillsAPI.read(self: SkillsAPI, name: string?): any
+	local result = self._t:request("GET", "/api/skills")
+	if not name then
+		return result
+	end
+	local want = string.lower(name)
+	local r = result :: any
+	if type(r) == "table" and type(r.skills) == "table" then
+		for _, s in ipairs(r.skills) do
+			if s.name ~= nil and string.lower(s.name) == want then
+				return s
+			end
+		end
+	end
+	return nil
 end
 
 -- Read the action bar(s): each slot's ability + cooldown + usable state. Thin
@@ -120,6 +250,8 @@ function AbilitiesAPI.read(self: AbilitiesAPI): AbilitiesReadResult
 	return self._t:request("GET", "/api/abilities")
 end
 
+-- DEPRECATED: dynamic bars are now part of the unified `bars` namespace -- they
+-- appear in `bars.read()` alongside the stat bars (same shape). Prefer `client.bars`.
 -- Detect on-screen progress bars (conjure timers, skilling, adrenaline, ...).
 -- Each bar TYPE is identified by its colour signature (`combo`, or a friendly
 -- `name` you registered) -- no training. Returns raw `bars`, a per-type `groups`
@@ -197,6 +329,8 @@ local function new(opts: TransportOptions): RS3Buddy
 		_t = t,
 		chat = setmetatable({ _t = t }, ChatAPI),
 		bars = setmetatable({ _t = t }, BarsAPI),
+		buffs = setmetatable({ _t = t }, BuffsAPI),
+		skills = setmetatable({ _t = t }, SkillsAPI),
 		abilities = setmetatable({ _t = t }, AbilitiesAPI),
 		progress = setmetatable({ _t = t }, ProgressAPI),
 		ui = setmetatable({ _t = t }, UiAPI),

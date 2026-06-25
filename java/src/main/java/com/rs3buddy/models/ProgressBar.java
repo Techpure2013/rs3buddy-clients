@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "x",
     "y",
     "w",
+    "h",
     "percent",
     "confident"
 })
@@ -65,6 +66,14 @@ public class ProgressBar {
     @JsonProperty("w")
     @JsonPropertyDescription("Drawn width (window px).")
     private Double w;
+    /**
+     * Drawn height (window px).
+     * (Required)
+     * 
+     */
+    @JsonProperty("h")
+    @JsonPropertyDescription("Drawn height (window px).")
+    private Double h;
     /**
      * Fill percent, 0-100.
      * (Required)
@@ -133,6 +142,16 @@ public class ProgressBar {
     }
 
     /**
+     * Drawn height (window px).
+     * (Required)
+     * 
+     */
+    @JsonProperty("h")
+    public Double getH() {
+        return h;
+    }
+
+    /**
      * Fill percent, 0-100.
      * (Required)
      * 
@@ -176,6 +195,10 @@ public class ProgressBar {
         sb.append('=');
         sb.append(((this.w == null)?"<null>":this.w));
         sb.append(',');
+        sb.append("h");
+        sb.append('=');
+        sb.append(((this.h == null)?"<null>":this.h));
+        sb.append(',');
         sb.append("percent");
         sb.append('=');
         sb.append(((this.percent == null)?"<null>":this.percent));
@@ -199,6 +222,7 @@ public class ProgressBar {
         result = ((result* 31)+((this.confident == null)? 0 :this.confident.hashCode()));
         result = ((result* 31)+((this.name == null)? 0 :this.name.hashCode()));
         result = ((result* 31)+((this.x == null)? 0 :this.x.hashCode()));
+        result = ((result* 31)+((this.h == null)? 0 :this.h.hashCode()));
         result = ((result* 31)+((this.combo == null)? 0 :this.combo.hashCode()));
         result = ((result* 31)+((this.y == null)? 0 :this.y.hashCode()));
         result = ((result* 31)+((this.percent == null)? 0 :this.percent.hashCode()));
@@ -214,7 +238,7 @@ public class ProgressBar {
             return false;
         }
         ProgressBar rhs = ((ProgressBar) other);
-        return ((((((((this.w == rhs.w)||((this.w!= null)&&this.w.equals(rhs.w)))&&((this.confident == rhs.confident)||((this.confident!= null)&&this.confident.equals(rhs.confident))))&&((this.name == rhs.name)||((this.name!= null)&&this.name.equals(rhs.name))))&&((this.x == rhs.x)||((this.x!= null)&&this.x.equals(rhs.x))))&&((this.combo == rhs.combo)||((this.combo!= null)&&this.combo.equals(rhs.combo))))&&((this.y == rhs.y)||((this.y!= null)&&this.y.equals(rhs.y))))&&((this.percent == rhs.percent)||((this.percent!= null)&&this.percent.equals(rhs.percent))));
+        return (((((((((this.w == rhs.w)||((this.w!= null)&&this.w.equals(rhs.w)))&&((this.confident == rhs.confident)||((this.confident!= null)&&this.confident.equals(rhs.confident))))&&((this.name == rhs.name)||((this.name!= null)&&this.name.equals(rhs.name))))&&((this.x == rhs.x)||((this.x!= null)&&this.x.equals(rhs.x))))&&((this.h == rhs.h)||((this.h!= null)&&this.h.equals(rhs.h))))&&((this.combo == rhs.combo)||((this.combo!= null)&&this.combo.equals(rhs.combo))))&&((this.y == rhs.y)||((this.y!= null)&&this.y.equals(rhs.y))))&&((this.percent == rhs.percent)||((this.percent!= null)&&this.percent.equals(rhs.percent))));
     }
 
 }

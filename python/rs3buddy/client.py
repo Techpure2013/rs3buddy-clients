@@ -1,13 +1,14 @@
 """RS3Buddy — typed Python client. One method per HTTP route."""
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, overload
 from urllib.parse import urlencode
 
 from .transport import Transport
 from .models import (
     Position, ShaderInfo, TextureInfo, SceneSnapshot, ChatReadResult,
-    BarsReadResult, AbilitiesReadResult, ProgressReadResult,
+    BarsReadResult, Bar, BuffsReadResult, Buff, SkillsReadResult, Skill, SkillName,
+    AbilitiesReadResult, ProgressReadResult,
     DrawItem, PostFxPassInput, ShaderFxInput, PlayerNameResult, FrameCaptureResult,
 )
 
@@ -45,20 +46,128 @@ class _ChatAPI:
         return self._t.request("GET", "/api/chat" + _q(x0=x0, y0=y0, x1=x1, y1=y1))
 
 
+# Map a friendly stat alias to its canonical bar name.
+_BAR_ALIAS = {
+    "hp": "hitpoints", "hitpoints": "hitpoints", "pray": "prayer", "prayer": "prayer",
+    "adren": "adrenaline", "adrenaline": "adrenaline", "summ": "summoning", "summoning": "summoning",
+}
+
+
 class _BarsAPI:
-    """Status-bar reader namespace, reached via RS3Buddy.bars."""
+    """Bar reader namespace, reached via RS3Buddy.bars."""
 
     def __init__(self, t: Transport) -> None:
         self._t = t
 
-    def read(self) -> BarsReadResult:
-        """Read the four status bars (HP / adrenaline / prayer / summoning).
+    @overload
+    def read(self) -> BarsReadResult: ...
+    @overload
+    def read(self, name: str) -> Optional[Bar]: ...
+    def read(self, name: Optional[str] = None) -> Any:
+        """Read the bars (GET /api/bars).
 
-        Each entry has ``value``, ``max`` (when current/max is shown),
-        ``found``, ``text`` and the located ``anchor`` + ``region``. Thin
-        wrapper over GET /api/bars; recognition runs server-side.
+        With no argument, returns the full result: ``bars`` is the four stat
+        bars (hitpoints, adrenaline, prayer, summoning) followed by any dynamic
+        bars on screen (skilling, conjure timers, ...), each the SAME shape --
+        ``fillPct`` (exact, from the bar's GPU geometry) plus ``value`` /
+        ``max`` / ``text`` (from the digits the game draws at the bar, when
+        any). All from one capture, so they're in sync.
+
+        With a ``name`` (a stat alias like ``"hp"``, or any bar's name), returns
+        just that one bar dict, or ``None`` if it is not on screen.
         """
-        return self._t.request("GET", "/api/bars")
+        result = self._t.request("GET", "/api/bars")
+        if not name:
+            return result
+        want = _BAR_ALIAS.get(str(name).lower(), str(name))
+        bars = result.get("bars", []) if isinstance(result, dict) else []
+        for bar in bars:
+            if isinstance(bar, dict) and bar.get("name") == want:
+                return bar
+        return None
+
+    def names(self) -> Any:
+        """The dynamic-bar friendly-name registry (combo -> name). GET /api/bars/names."""
+        return self._t.request("GET", "/api/bars/names")
+
+    def name(self, combo: str, name: str) -> Any:
+        """Name (or, with an empty name, un-name) a dynamic bar combo. POST /api/bars/name."""
+        return self._t.request("POST", "/api/bars/name", {"combo": combo, "name": name})
+
+
+class _BuffsAPI:
+    """Buff/debuff reader namespace, reached via RS3Buddy.buffs."""
+
+    def __init__(self, t: Transport) -> None:
+        self._t = t
+
+    @overload
+    def read(self) -> BuffsReadResult: ...
+    @overload
+    def read(self, name: str) -> Optional[Buff]: ...
+    def read(self, name: Optional[str] = None) -> Any:
+        """Read the buff bar (GET /api/buffs).
+
+        With no argument, returns the full result: ``buffs`` and ``debuffs`` come
+        back as separate lists of the SAME shape (``kind`` tells them apart), each
+        cell carrying ``name`` (from its icon's colour signature), ``value`` (the
+        timer/stack), ``text`` and ``rect``.
+
+        With a ``name`` (e.g. ``"buff:necrosis"`` or just ``"necrosis"`` — the
+        sprite prefix is optional), returns just that one buff/debuff dict, or
+        ``None`` if it is not active.
+        """
+        result = self._t.request("GET", "/api/buffs")
+        if not name:
+            return result
+
+        def bare(s: str) -> str:
+            return (s.split(":")[-1] if ":" in s else s).lower()
+
+        want = bare(str(name))
+        if isinstance(result, dict):
+            for entry in list(result.get("buffs", [])) + list(result.get("debuffs", [])):
+                nm = entry.get("name") if isinstance(entry, dict) else None
+                if nm is not None and bare(str(nm)) == want:
+                    return entry
+        return None
+
+    def names(self) -> Any:
+        """The buff/debuff icon-name registry (iconColorHash -> name). GET /api/buffs/names."""
+        return self._t.request("GET", "/api/buffs/names")
+
+    def name(self, icon_color_hash: Any, name: str) -> Any:
+        """Name (or, empty name to un-name) an icon by its iconColorHash. POST /api/buffs/name."""
+        return self._t.request("POST", "/api/buffs/name", {"colorHash": icon_color_hash, "name": name})
+
+
+class _SkillsAPI:
+    """Skills-interface reader namespace, reached via RS3Buddy.skills."""
+
+    def __init__(self, t: Transport) -> None:
+        self._t = t
+
+    @overload
+    def read(self) -> SkillsReadResult: ...
+    @overload
+    def read(self, name: SkillName) -> Optional[Skill]: ...
+    def read(self, name: Optional[str] = None) -> Any:
+        """Read the skills interface (GET /api/skills).
+
+        With no argument, returns every skill cell on screen, each with its
+        current ``level`` and ``base`` (trained) level. With a skill ``name`` (a
+        ``SkillName`` like ``"attack"``), returns just that one skill dict, or
+        ``None`` if it is not on screen.
+        """
+        result = self._t.request("GET", "/api/skills")
+        if not name:
+            return result
+        want = str(name).lower()
+        skills = result.get("skills", []) if isinstance(result, dict) else []
+        for skill in skills:
+            if isinstance(skill, dict) and str(skill.get("name", "")).lower() == want:
+                return skill
+        return None
 
 
 class _AbilitiesAPI:
@@ -78,7 +187,13 @@ class _AbilitiesAPI:
 
 
 class _ProgressAPI:
-    """Progress-bar reader namespace, reached via RS3Buddy.progress."""
+    """Progress-bar reader namespace, reached via RS3Buddy.progress.
+
+    .. deprecated::
+        Dynamic bars are now part of the unified ``bars`` namespace -- they
+        appear in ``RS3Buddy.bars.read()`` alongside the stat bars, same shape.
+        Kept for back-compat; prefer ``RS3Buddy.bars``.
+    """
 
     def __init__(self, t: Transport) -> None:
         self._t = t
@@ -209,6 +324,8 @@ class RS3Buddy:
         self._t = Transport(base_url=base_url, client_name=client_name, timeout=timeout)
         self.chat = _ChatAPI(self._t)
         self.bars = _BarsAPI(self._t)
+        self.buffs = _BuffsAPI(self._t)
+        self.skills = _SkillsAPI(self._t)
         self.abilities = _AbilitiesAPI(self._t)
         self.progress = _ProgressAPI(self._t)
         self.ui = _UIAPI(self._t)

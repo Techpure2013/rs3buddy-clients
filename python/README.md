@@ -1,6 +1,6 @@
 # rs3buddy — Python API reference
 
-Version 0.1.1 · last updated 2026-06-21
+Version 0.1.2 · last updated 2026-06-25
 
 ## Install
 
@@ -109,6 +109,68 @@ Reads the four status bars / orbs (HP, adrenaline, prayer, summoning) in one cal
 res = buddy.bars.read()
 hp = next(b for b in res["bars"] if b["name"] == "hitpoints")
 print(hp["value"], "/", hp["max"])
+```
+
+## Buffs
+
+Reads the buff / debuff bar — active buffs (e.g. Overloads, Soulsplit, Necrosis stacks) and debuffs (e.g. Vulnerability, Smoke Cloud) in two separate arrays. Recognition runs server-side; each icon is identified by its colour hash against the trained sprite registry.
+
+### buffs.read(name=None) -> BuffsReadResult | Buff | None
+Reads every buff and debuff currently shown on the buff bar.
+- **Parameters** (optional)
+  - `name` · `str | None` · if given, searches both arrays and returns the single matching `Buff` (or `None`). `name` may be the full sprite name (`"buff:necrosis"`) or just the suffix (`"necrosis"`); the `buff:` / `debuff:` prefix is optional and matching is case-insensitive.
+- **Returns**
+  - With no `name` — `BuffsReadResult` — `{ "ok", "stale", "ageMs", "buffs": [Buff, ...], "debuffs": [Buff, ...] }`. `"buffs"` contains entries with `kind == "buff"`; `"debuffs"` contains entries with `kind == "debuff"`. Each `Buff` is `{ "kind": "buff"|"debuff", "name": str|None, "iconColorHash": int|None, "value": int|None, "text": str|None, "rect": {"x","y","w","h"} }`. `"name"` is e.g. `"buff:necrosis"` or `None` when untrained. `"value"` is the timer or stack count read from the icon's glyph — not OCR; `None` when no number is shown.
+  - With `name` — a single `Buff` dict or `None`.
+- **Notes** Opt-in; the buff bar must be visible on screen. `"stale"` is `False` whenever a fresh capture happened on this call.
+
+### buffs.names() -> dict
+Returns the trained icon-name registry (icon colour hash → sprite name).
+- **Returns** `dict` — `{ "ok": True, "names": { iconColorHash: name } }`.
+
+### buffs.name(icon_color_hash, name) -> dict
+Train or rename a buff/debuff icon. Pass an empty `name` to remove the mapping.
+- **Parameters**
+  - `icon_color_hash` · `int` · the icon's colour hash (from a `Buff["iconColorHash"]`).
+  - `name` · `str` · the sprite name to assign (e.g. `"buff:necrosis"`). Pass `""` to remove.
+- **Returns** `dict` — `{ "ok": True }`.
+
+```python
+res = buddy.buffs.read()
+for b in res["buffs"]:
+    print(b["name"], b["value"])
+for d in res["debuffs"]:
+    print(d["name"])
+
+# Look up one buff by name (prefix optional, case-insensitive)
+n = buddy.buffs.read("necrosis")
+if n:
+    print("Necrosis stacks:", n["value"])
+```
+
+## Skills
+
+Reads the skills interface tab — every one of the 29 RS3 skills, with the player's current (live) level and trained base level. Recognition runs server-side; each skill is anchored to its uniquely coloured icon.
+
+### skills.read(name=None) -> SkillsReadResult | Skill | None
+Reads all 29 skills from the skills tab.
+- **Parameters** (optional)
+  - `name` · `str | None` · a skill name (e.g. `"attack"`, `"herblore"`, `"necromancy"`). If given, returns the single matching `Skill` dict or `None`.
+- **Returns**
+  - With no `name` — `SkillsReadResult` — `{ "ok", "stale", "ageMs", "skills": [Skill, ...] }`. Each `Skill` is `{ "name": str, "level": int|None, "base": int|None, "rect": {"x","y","w","h"} }`. `"level"` is the **current live level** — it drops when a drain debuff is active and rises when boosted (e.g. an Overload). `"base"` is the **trained base level** and does not fluctuate. Both are `None` when the cell is not readable.
+  - With `name` — a single `Skill` dict or `None`.
+- **Notes** Opt-in; the skills tab must be open and visible on screen.
+
+```python
+sk = buddy.skills.read()
+for s in sk["skills"]:
+    if s["level"] is not None and s["base"] is not None and s["level"] > s["base"]:
+        print(s["name"], "boosted:", s["base"], "->", s["level"])
+
+# Read one skill by name
+atk = buddy.skills.read("attack")
+if atk:
+    print("Attack — current:", atk["level"], "base:", atk["base"])
 ```
 
 ## Abilities

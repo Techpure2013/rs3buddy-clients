@@ -1,6 +1,6 @@
 # rs3buddy — Lua API reference
 
-Version 0.1.1 · last updated 2026-06-21
+Version 0.1.2 · last updated 2026-06-25
 
 ## Install / require
 
@@ -83,6 +83,66 @@ Reads the in-game chatbox as structured lines, with per-run and per-glyph colour
 Reads the four status orbs (HP, adrenaline, prayer, summoning) in one call. Recognition runs server-side.
 - **Returns** a table `{ ok, stale, ageMs, bars }`. `bars` is always the four entries in fixed order; each is `{ name, found, value, max, text, anchor, region }`. `name` is `"hitpoints" | "adrenaline" | "prayer" | "summoning"`; `value`/`max` are `nil` when unreadable / not shown (adrenaline `value` is a percentage with `max = nil`); `anchor` is the icon box `{ x, y, w, h }`; `region` is the digit box `{ x0, y0, x1, y1 }`. Check each entry's `found`.
 - **Notes** Opt-in; the orbs must be visible on screen. `stale = false` whenever a fresh capture happened on this call.
+
+## Buffs
+
+Reads the buff / debuff bar — active buffs (e.g. Overloads, Soulsplit, Necrosis stacks) and debuffs (e.g. Vulnerability, Smoke Cloud) in two separate arrays. Recognition runs server-side; each icon is identified by its colour hash against the trained sprite registry.
+
+### buddy.buffs:read(name?)
+Reads every buff and debuff currently shown on the buff bar.
+- **Parameters**
+  - `name` · string (optional) · if given, searches both arrays and returns the single matching buff table or `nil`. `name` may be the full sprite name (`"buff:necrosis"`) or just the suffix (`"necrosis"`); the `buff:` / `debuff:` prefix is optional and matching is case-insensitive.
+- **Returns**
+  - With no `name` — a table `{ ok, stale, ageMs, buffs, debuffs }`. `buffs` is an array of buff entries with `kind = "buff"`; `debuffs` is an array of entries with `kind = "debuff"`. Each entry is `{ kind, name, iconColorHash, value, text, rect = { x, y, w, h } }`. `name` is e.g. `"buff:necrosis"` or `nil` when untrained. `value` is the timer or stack count read from the icon's glyph — not OCR; `nil` when no number is shown.
+  - With `name` — a single buff table or `nil`.
+- **Notes** Opt-in; the buff bar must be visible on screen. `stale = false` whenever a fresh capture happened on this call.
+
+### buddy.buffs:names()
+Returns the trained icon-name registry (icon colour hash → sprite name).
+- **Returns** a table `{ ok, names }`, where `names` maps `iconColorHash` → sprite name.
+
+### buddy.buffs:name(icon_color_hash, name)
+Train or rename a buff/debuff icon. Pass an empty `name` to remove the mapping.
+- **Parameters**
+  - `icon_color_hash` · number · the icon's colour hash (from a buff entry's `iconColorHash`).
+  - `name` · string · the sprite name to assign (e.g. `"buff:necrosis"`). Pass `""` to remove.
+- **Returns** a table `{ ok }`.
+
+```lua
+local res = buddy.buffs:read()
+for _, b in ipairs(res.buffs)   do print(b.name, b.value)  end
+for _, d in ipairs(res.debuffs) do print(d.name)           end
+
+-- Look up one buff by name (prefix optional, case-insensitive)
+local n = buddy.buffs:read("buff:necrosis")
+if n then print("Necrosis stacks:", n.value) end
+```
+
+## Skills
+
+Reads the skills interface tab — every one of the 29 RS3 skills, with the player's current (live) level and trained base level. Recognition runs server-side; each skill is anchored to its uniquely coloured icon.
+
+### buddy.skills:read(name?)
+Reads all 29 skills from the skills tab.
+- **Parameters**
+  - `name` · string (optional) · a skill name (e.g. `"attack"`, `"herblore"`, `"necromancy"`). If given, returns the single matching skill table or `nil`.
+- **Returns**
+  - With no `name` — a table `{ ok, stale, ageMs, skills }`. Each `skills` entry is `{ name, level, base, rect = { x, y, w, h } }`. `level` is the **current live level** — it drops when a drain debuff is active and rises when boosted (e.g. an Overload). `base` is the **trained base level** and does not fluctuate. Both are `nil` when the cell is not readable.
+  - With `name` — a single skill table or `nil`.
+- **Notes** Opt-in; the skills tab must be open and visible on screen.
+
+```lua
+local sk = buddy.skills:read()
+for _, s in ipairs(sk.skills) do
+    if s.level and s.base and s.level > s.base then
+        print(s.name .. " boosted: " .. s.base .. " -> " .. s.level)
+    end
+end
+
+-- Read one skill by name
+local atk = buddy.skills:read("attack")
+if atk then print("Attack — current:", atk.level, "base:", atk.base) end
+```
 
 ## Abilities
 

@@ -1,6 +1,6 @@
 # rs3buddy — TypeScript API reference
 
-Version 0.1.1 · last updated 2026-06-21
+Version 0.1.2 · last updated 2026-06-25
 
 ## Install
 
@@ -73,6 +73,65 @@ Reads the in-game chatbox as structured lines, with per-run and per-glyph colour
 Reads the four status bars / orbs (HP, adrenaline, prayer, summoning) in one call. Recognition runs server-side.
 - **Returns** `Promise<BarsReadResult>` — `{ ok, stale, ageMs, bars: BarValue[] }`. `bars` is always the four bars in fixed order (`hitpoints`, `adrenaline`, `prayer`, `summoning`); check each entry's `found`. Each `BarValue` is `{ name, found, value, max, text, anchor, region }` — `value` is `number | null` (a percentage for adrenaline, whose `max` is `null`), `max` is `number | null` (only set when the bar shows current/max), `anchor`/`region` are window-px rects or `null` when not found.
 - **Notes** Opt-in; the orbs must be visible on screen. `stale` is `false` whenever a fresh capture happened on this call.
+
+## Buffs
+
+Reads the buff / debuff bar — active buffs (e.g. Overloads, Soulsplit, Necrosis stacks) and debuffs (e.g. Vulnerability, Smoke Cloud) in two separate arrays. Recognition runs server-side; each icon is identified by its colour hash against the trained sprite registry.
+
+### buddy.buffs.read(): Promise<BuffsReadResult>
+Reads every buff and debuff currently shown on the buff bar.
+- **Returns** `Promise<BuffsReadResult>` — `{ ok, stale, ageMs, buffs: Buff[], debuffs: Buff[] }`. `buffs` contains entries where `kind === "buff"`; `debuffs` contains entries where `kind === "debuff"`. Each `Buff` is `{ kind: "buff" | "debuff", name: string | null, iconColorHash: number | null, value: number | null, text: string | null, rect: { x, y, w, h } }`. `name` is e.g. `"buff:necrosis"` or `null` when the icon has not been trained. `value` is the timer or stack count read directly from the icon's glyph — not OCR; `null` when there is no number displayed.
+- **Overloads**
+  - `buddy.buffs.read()` — all buffs and debuffs.
+  - `buddy.buffs.read(name: string)` — returns a single `Buff | null`. `name` may be the full sprite name (`"buff:necrosis"`) or just the suffix (`"necrosis"`); the `buff:` / `debuff:` prefix is optional, matching is case-insensitive, and both arrays are searched.
+- **Notes** Opt-in; the buff bar must be visible on screen.
+
+### buddy.buffs.names(): Promise<{ ok: boolean; names: Record<number, string> }>
+Returns the trained icon-name registry (icon colour hash → sprite name).
+- **Returns** `Promise<{ ok: boolean; names: Record<number, string> }>` — `names` maps each `iconColorHash` to the registered sprite name.
+
+### buddy.buffs.name(iconColorHash: number, name: string): Promise<{ ok: boolean }>
+Train or rename a buff/debuff icon. Pass an empty `name` to remove the mapping.
+- **Parameters**
+  - `iconColorHash` · `number` · the icon's colour hash (from a `Buff.iconColorHash`).
+  - `name` · `string` · the sprite name to assign (e.g. `"buff:necrosis"`). Pass `""` to remove.
+- **Returns** `Promise<{ ok: boolean }>`.
+
+```ts
+// Read all buffs and debuffs
+const { buffs, debuffs } = await buddy.buffs.read();
+for (const b of buffs)   console.log(b.name, b.value);
+for (const d of debuffs) console.log(d.name);
+
+// Look up one buff by name (prefix optional, case-insensitive)
+const necrosis = await buddy.buffs.read("buff:necrosis");
+if (necrosis) console.log(`Necrosis stacks: ${necrosis.value}`);
+```
+
+## Skills
+
+Reads the skills interface tab — every one of the 29 RS3 skills, with the player's current (live) level and trained base level. Recognition runs server-side; each skill is anchored to its uniquely coloured icon.
+
+### buddy.skills.read(): Promise<SkillsReadResult>
+Reads all 29 skills from the skills tab.
+- **Returns** `Promise<SkillsReadResult>` — `{ ok, stale, ageMs, skills: Skill[] }`. Each `Skill` is `{ name: SkillName, level: number | null, base: number | null, rect: { x, y, w, h } }`. `level` is the **current live level** — it drops when a drain debuff is active and rises when boosted (e.g. an Overload). `base` is the **trained base level** and does not fluctuate. Both are `null` when the cell is not readable.
+- **Overloads**
+  - `buddy.skills.read()` — all 29 skills.
+  - `buddy.skills.read(name: SkillName)` — returns a single `Skill | null`. The `SkillName` type (e.g. `"attack"`, `"herblore"`, `"necromancy"`) is exported from the package and autocompletes in your editor.
+- **Notes** Opt-in; the skills tab must be open and visible on screen.
+
+```ts
+// Read every skill and check for a boost
+const { skills } = await buddy.skills.read();
+for (const s of skills) {
+  if (s.level !== null && s.base !== null && s.level > s.base)
+    console.log(`${s.name} boosted: ${s.base} → ${s.level}`);
+}
+
+// Read one skill by name
+const atk = await buddy.skills.read("attack");
+if (atk) console.log(`Attack — current: ${atk.level}, base: ${atk.base}`);
+```
 
 ## Abilities
 

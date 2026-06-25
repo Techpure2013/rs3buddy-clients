@@ -1,13 +1,13 @@
 # rs3buddy — Java API reference
 
-Version 0.1.1 · last updated 2026-06-21
+Version 0.1.2 · last updated 2026-06-25
 
 ## Install
 
 - **JDK 11+** (the client uses only `java.net.http.HttpClient` and `Path.of`, both Java 11). The project itself builds with a **JDK 17** toolchain.
 - **Get the jar.** There is no published Maven Central artifact. Build it from the client source at `C:\Users\Techp\Desktop\rs3buddy-clients\java`:
-  - **Source build (recommended):** in your own Gradle project add `includeBuild("path/to/rs3buddy-clients/java")` to `settings.gradle`, then depend on it: `implementation "com.rs3buddy:rs3buddy-client:0.1.1"`.
-  - **Plain jar:** run `gradle jar` in `rs3buddy-clients/java` → produces `build/libs/rs3buddy-client-0.1.1.jar`. Put that on your classpath alongside the three Jackson jars.
+  - **Source build (recommended):** in your own Gradle project add `includeBuild("path/to/rs3buddy-clients/java")` to `settings.gradle`, then depend on it: `implementation "com.rs3buddy:rs3buddy-client:0.1.2"`.
+  - **Plain jar:** run `gradle jar` in `rs3buddy-clients/java` → produces `build/libs/rs3buddy-client-0.1.2.jar`. Put that on your classpath alongside the three Jackson jars.
 - **Dependency:** Jackson `com.fasterxml.jackson.core:jackson-databind:2.17.1` (pulls in `jackson-core` + `jackson-annotations`). The source build resolves this transitively; for a plain-jar setup add all three Jackson jars (from your Gradle cache) to the classpath.
 
 ```java
@@ -96,6 +96,63 @@ Read the in-game chatbox as structured lines, with per-run and per-glyph colour.
 Read the four status orbs (HP, adrenaline, prayer, summoning) in one call.
 - **Returns** `BarsReadResult` — getters: `getOk()` (`Boolean`), `getStale()` (`Boolean`; `false` when a fresh capture happened on this call), `getAgeMs()` (`Double`), `getBars()` (`List<BarValue>`, always the four bars in fixed order). Each `BarValue` has `getName()` (`BarValue.BarName` enum: `HITPOINTS`/`ADRENALINE`/`PRAYER`/`SUMMONING`), `getFound()` (`Boolean`), `getValue()` (`Double`; a percentage for adrenaline; `null` when found-but-unreadable), `getMax()` (`Double`; `null` when only one number shown), `getText()` (`String`, e.g. `"10,018/10,200"`), `getAnchor()` (`Object`; icon rect or `null`), `getRegion()` (`Object`; scanned pixel box or `null`).
 - **Notes** Opt-in; the orbs must be visible on screen.
+
+## Buffs
+
+Reads the buff / debuff bar — active buffs (e.g. Overloads, Soulsplit, Necrosis stacks) and debuffs (e.g. Vulnerability, Smoke Cloud) in two separate lists. Recognition runs server-side; each icon is identified by its colour hash against the trained sprite registry.
+
+### BuffsReadResult buffs.read()
+Read every buff and debuff currently shown on the buff bar.
+- **Returns** `BuffsReadResult` — getters: `getOk()` (`Boolean`), `getStale()` (`Boolean`; `false` when a fresh capture happened on this call), `getAgeMs()` (`Double`), `getBuffs()` (`List<Buff>`, entries with `kind == "buff"`), `getDebuffs()` (`List<Buff>`, entries with `kind == "debuff"`). Each `Buff` has `getKind()` (`String`, `"buff"` or `"debuff"`), `getName()` (`String`; e.g. `"buff:necrosis"`; `null` when untrained), `getIconColorHash()` (`Double`; `null` when unknown), `getValue()` (`Double`; the timer or stack count read directly from the icon's glyph — not OCR; `null` when no number is shown), `getText()` (`String`; `null` when none), `getRect()` (`BuffRect`, on-screen bounding box).
+- **Overloads**
+  - `buffs.read()` — all buffs and debuffs.
+  - `buffs.read(String name)` — searches both arrays and returns the single matching `Buff` or `null`. `name` may be the full sprite name (`"buff:necrosis"`) or just the suffix (`"necrosis"`); the `buff:` / `debuff:` prefix is optional and matching is case-insensitive.
+- **Notes** Opt-in; the buff bar must be visible on screen.
+
+### JsonNode buffs.names()
+Returns the trained icon-name registry (icon colour hash → sprite name).
+- **Returns** `JsonNode` — a map of `iconColorHash` → sprite name.
+
+### JsonNode buffs.name(long iconColorHash, String name)
+Train or rename a buff/debuff icon. Pass an empty `name` to remove the mapping.
+- **Parameters**
+  - `iconColorHash` · `long` · the icon's colour hash (from `buff.getIconColorHash()`).
+  - `name` · `String` · the sprite name to assign (e.g. `"buff:necrosis"`). Pass `""` to remove.
+- **Returns** `JsonNode` — `{ ok }`.
+
+```java
+BuffsReadResult res = buddy.buffs.read();
+for (Buff b : res.getBuffs())   System.out.println(b.getName() + " " + b.getValue());
+for (Buff d : res.getDebuffs()) System.out.println(d.getName());
+
+// Look up one buff by name (prefix optional, case-insensitive)
+Buff n = buddy.buffs.read("buff:necrosis");
+if (n != null) System.out.println("Necrosis stacks: " + n.getValue());
+```
+
+## Skills
+
+Reads the skills interface tab — every one of the 29 RS3 skills, with the player's current (live) level and trained base level. Recognition runs server-side; each skill is anchored to its uniquely coloured icon.
+
+### SkillsReadResult skills.read()
+Read all 29 skills from the skills tab.
+- **Returns** `SkillsReadResult` — getters: `getOk()` (`Boolean`), `getStale()` (`Boolean`), `getAgeMs()` (`Double`), `getSkills()` (`List<Skill>`). Each `Skill` has `getName()` (`String`, a `SkillName` — e.g. `"attack"`, `"herblore"`, `"necromancy"`), `getLevel()` (`Double`; the **current live level** — drops when a drain debuff is active, rises when boosted; `null` when unreadable), `getBase()` (`Double`; the **trained base level** — does not fluctuate; `null` when unreadable), `getRect()` (`SkillRect`, the cell's on-screen bounding box).
+- **Overloads**
+  - `skills.read()` — all 29 skills.
+  - `skills.read(String name)` — returns the single matching `Skill` or `null`. `name` is a skill name string (e.g. `"attack"`).
+- **Notes** Opt-in; the skills tab must be open and visible on screen.
+
+```java
+SkillsReadResult sk = buddy.skills.read();
+for (Skill s : sk.getSkills()) {
+    if (s.getLevel() != null && s.getBase() != null && s.getLevel() > s.getBase())
+        System.out.println(s.getName() + " boosted: " + s.getBase() + " -> " + s.getLevel());
+}
+
+// Read one skill by name
+Skill atk = buddy.skills.read("attack");
+if (atk != null) System.out.println("Attack — current: " + atk.getLevel() + ", base: " + atk.getBase());
+```
 
 ## Abilities
 

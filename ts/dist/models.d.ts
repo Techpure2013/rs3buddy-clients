@@ -441,7 +441,7 @@ export interface ChatBox {
     y1: number;
 }
 /**
- * Result of reading the status bars (GET /api/bars). `bars` is always the four bars in a fixed order (hitpoints, adrenaline, prayer, summoning); check each bar's `found` / `value`.
+ * Result of reading the bars (GET /api/bars). `bars` always starts with the four stat bars in fixed order (hitpoints, adrenaline, prayer, summoning), followed by every dynamic bar currently on screen — ALL from a single capture, so every reading is from the same frame (no two-endpoint drift). Check each bar's `found` / `fillPct` / `value`.
  */
 export interface BarsReadResult {
     ok: boolean;
@@ -454,47 +454,55 @@ export interface BarsReadResult {
      */
     ageMs: number;
     /**
-     * The four status bars, in fixed order.
+     * The bars: the four stat bars (always present) followed by any dynamic bars on screen. Every entry has the same `Bar` shape.
      */
-    bars: BarValue[];
+    bars: Bar[];
+    /**
+     * Names (or combos, when unnamed) of dynamic bar types that appeared on this poll.
+     */
+    began: string[];
+    /**
+     * Names (or combos, when unnamed) of dynamic bar types that vanished on this poll.
+     */
+    ended: string[];
 }
 /**
- * One status bar's reading.
+ * One bar's reading — the SAME shape for EVERY bar, whether it's a persistent stat orb (hitpoints / adrenaline / prayer / summoning) or a transient bar detected on screen (a skilling action, a conjure timer, an activity bar, …). Fields that don't apply to a given bar are `null`; the shape never changes, so one code path reads them all.
  */
-export interface BarValue {
+export interface Bar {
     /**
-     * Which bar this is.
+     * Identifier. For the four stats it is the stat name. For a detected bar it is the registered friendly name (set via POST /api/bars/name) if one exists, else its colour-signature `combo`. Pass it to `bars.read(name)` to read just this bar.
      */
-    name: "hitpoints" | "adrenaline" | "prayer" | "summoning";
+    name: string;
     /**
-     * True when the bar's anchor sprite was located on screen.
+     * Colour-signature type id for a detected bar (stable across frames as the bar fills or moves); `null` for the four stat bars.
+     */
+    combo: string | null;
+    /**
+     * True when the bar is currently drawn on screen.
      */
     found: boolean;
     /**
-     * Parsed numeric value (a percentage for adrenaline), or null when the anchor was found but no digits could be recognised in its region.
+     * Exact fill 0–100 read from the bar's GPU geometry (the drawn fill width). Present whenever the bar is on screen — even when no number is drawn — so this is the value to use for %-based logic such as alert thresholds.
+     */
+    fillPct: number | null;
+    /**
+     * Current value, recovered from the digit glyphs the game itself draws at the bar (e.g. an orb's "10200"). Exact — matched against the font glyphs, not OCR — it only requires the digits to be on screen at capture. `null` when the bar draws no number.
      */
     value: number | null;
     /**
-     * The max value when the bar shows "current / max" (e.g. hitpoints 10200/10200 → max 10200); null when only a single number is shown.
+     * Max value when the bar shows "current / max" (e.g. hitpoints 10200/10200 → 10200); `null` when only a single number (or none) is drawn.
      */
     max: number | null;
     /**
-     * Raw recognised text incl. separators, e.g. "10200/10200" or "100%".
+     * Raw recognised text incl. separators, e.g. "10200/10200" or "100%"; `null` when none.
      */
-    text: string;
+    text: string | null;
     /**
-     * The anchor sprite's screen rect, or null when the bar was not found.
+     * The bar's screen rect in window px, or `null` when it is not on screen.
      */
-    anchor: BarRect | null;
-    /**
-     * The region scanned for the value, or null when the bar was not found.
-     */
-    region: BarBox | null;
+    rect: BarRect | null;
 }
-/**
- * The four readable RS3 status bars / orbs.
- */
-export type BarName = "hitpoints" | "adrenaline" | "prayer" | "summoning";
 /**
  * A located UI rect in window px (top-left x/y + size).
  */
@@ -505,14 +513,111 @@ export interface BarRect {
     h: number;
 }
 /**
- * A scanned region in window px (origin corner + opposite corner).
+ * Result of reading the buff bar (GET /api/buffs). Buffs and debuffs are returned in separate arrays — both made of the same `Buff` shape — ALL from a single capture, so every reading is from the same frame.
  */
-export interface BarBox {
-    x0: number;
-    y0: number;
-    x1: number;
-    y1: number;
+export interface BuffsReadResult {
+    ok: boolean;
+    /**
+     * True when no fresh capture was available yet and the cache was empty.
+     */
+    stale: boolean;
+    /**
+     * Age of the cached glyph set this read used, in ms.
+     */
+    ageMs: number;
+    /**
+     * Active buffs (green-bordered cells).
+     */
+    buffs: Buff[];
+    /**
+     * Active debuffs (red-bordered cells).
+     */
+    debuffs: Buff[];
 }
+/**
+ * One buff or debuff cell on the buff bar. Buffs and debuffs share the SAME shape — they're told apart by `kind` (the cell's border tint: green = buff, red = debuff) and returned in separate `buffs` / `debuffs` arrays by the read.
+ */
+export interface Buff {
+    /**
+     * "buff" (green-bordered cell) or "debuff" (red-bordered cell).
+     */
+    kind: "buff" | "debuff";
+    /**
+     * Friendly effect name (e.g. "bone_shield", "prayer_renewal"), resolved from the icon's COLOUR signature; `null` when the icon isn't named yet. Train an unknown icon with `buffs.name(iconColorHash, "…")` (POST /api/buffs/name).
+     */
+    name: string | null;
+    /**
+     * Colour-hash identity of the cell's icon (stable across game sessions). This is the key you pass to `buffs.name()` to give the effect a `name`; `null` when no icon was found in the cell.
+     */
+    iconColorHash: number | null;
+    /**
+     * The numeric timer/stack drawn in the cell (e.g. a 50-second shield, 5 stacks), recovered from the digit glyphs the game draws — exact, not OCR. `null` when no number is drawn.
+     */
+    value: number | null;
+    /**
+     * Raw recognised text in the cell incl. non-digit chars (e.g. "5m"); `null` when none.
+     */
+    text: string | null;
+    rect: BuffRect;
+}
+/**
+ * A located UI rect in window px (top-left x/y + size).
+ */
+export interface BuffRect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+/**
+ * Result of reading the skills interface (GET /api/skills) — one `Skill` per skill cell currently on screen, all from a single capture.
+ */
+export interface SkillsReadResult {
+    ok: boolean;
+    /**
+     * True when no fresh capture was available yet and the cache was empty.
+     */
+    stale: boolean;
+    /**
+     * Age of the cached glyph set this read used, in ms.
+     */
+    ageMs: number;
+    /**
+     * The skills currently on screen (each with current `level` + `base`).
+     */
+    skills: Skill[];
+}
+/**
+ * One skill cell on the skills interface — anchored on the skill's icon, with the two level numbers drawn beside it read out exactly (glyph-matched, not OCR).
+ */
+export interface Skill {
+    /**
+     * Skill name — one of  {@link  SkillName }  (e.g. "attack", "herblore", "necromancy"). Typed as a plain string on the result so an unexpected trained name never breaks a read; pass a `SkillName` to `skills.read(name)`.
+     */
+    name: string;
+    /**
+     * Current (live) level — equals `base` normally, LOWER when a debuff drains the skill, HIGHER when a potion boosts it. Use this for live logic. `null` when no level number is drawn.
+     */
+    level: number | null;
+    /**
+     * Base (trained) level — what the skill sits at unbuffed. `null` when none is drawn.
+     */
+    base: number | null;
+    rect: SkillRect;
+}
+/**
+ * A located UI rect in window px (top-left x/y + size).
+ */
+export interface SkillRect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+/**
+ * The RS3 skills, by name — the value of `Skill.name` and the argument to `skills.read(name)`. (These are the icon names trained in sprites.json as `skill:<name>`, with the `skill:` prefix stripped.)
+ */
+export type SkillName = "attack" | "defence" | "strength" | "constitution" | "ranged" | "prayer" | "magic" | "cooking" | "woodcutting" | "fletching" | "fishing" | "firemaking" | "crafting" | "smithing" | "mining" | "herblore" | "agility" | "thieving" | "slayer" | "farming" | "runecrafting" | "hunter" | "construction" | "summoning" | "dungeoneering" | "divination" | "invention" | "archaeology" | "necromancy";
 /**
  * Result of reading the action bar(s) (GET /api/abilities). `abilities` is in reading order — rows top-to-bottom, then left-to-right.
  */
@@ -629,6 +734,10 @@ export interface ProgressBar {
      * Drawn width (window px).
      */
     w: number;
+    /**
+     * Drawn height (window px).
+     */
+    h: number;
     /**
      * Fill percent, 0-100.
      */

@@ -3,7 +3,12 @@ package com.rs3buddy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rs3buddy.models.AbilitiesReadResult;
+import com.rs3buddy.models.Bar;
 import com.rs3buddy.models.BarsReadResult;
+import com.rs3buddy.models.Buff;
+import com.rs3buddy.models.BuffsReadResult;
+import com.rs3buddy.models.Skill;
+import com.rs3buddy.models.SkillsReadResult;
 import com.rs3buddy.models.ProgressReadResult;
 import com.rs3buddy.models.ChatReadResult;
 import com.rs3buddy.models.FrameCaptureResult;
@@ -37,6 +42,12 @@ public final class RS3Buddy {
     /** Status-bar reader namespace; reached via {@code buddy.bars.read()}. */
     public final Bars bars;
 
+    /** Buff/debuff reader namespace; reached via {@code buddy.buffs.read()}. */
+    public final Buffs buffs;
+
+    /** Skills-interface reader namespace; reached via {@code buddy.skills.read()}. */
+    public final Skills skills;
+
     /** Action-bar reader namespace; reached via {@code buddy.abilities.read()}. */
     public final Abilities abilities;
 
@@ -53,6 +64,8 @@ public final class RS3Buddy {
         this.t = new Transport(baseUrl);
         this.chat = new Chat();
         this.bars = new Bars();
+        this.buffs = new Buffs();
+        this.skills = new Skills();
         this.abilities = new Abilities();
         this.progress = new Progress();
         this.ui = new UI();
@@ -63,6 +76,8 @@ public final class RS3Buddy {
         this.t = new Transport(baseUrl, clientName);
         this.chat = new Chat();
         this.bars = new Bars();
+        this.buffs = new Buffs();
+        this.skills = new Skills();
         this.abilities = new Abilities();
         this.progress = new Progress();
         this.ui = new UI();
@@ -289,16 +304,122 @@ public final class RS3Buddy {
         }
     }
 
-    // ── Status bars ──
+    // ── Bars ──
     /**
-     * Status-bar reader (HP / adrenaline / prayer / summoning). Thin wrapper over
-     * GET /api/bars; each {@link BarsReadResult} entry exposes the current
-     * {@code value}, {@code max} (when shown), and the located anchor + region.
+     * Bar reader. One {@code Bar} shape for every bar: the four stat bars
+     * (hitpoints, adrenaline, prayer, summoning — always present) plus any
+     * dynamic bars on screen (skilling, conjure timers, ...). Each carries
+     * {@code fillPct} (exact, from the bar's GPU geometry) plus {@code value} /
+     * {@code max} / {@code text} (from the digits the game draws at the bar, when
+     * any). All from one capture, so the readings are in sync.
      */
     public final class Bars {
-        /** Read the four status bars. */
+        /** Read every bar (4 stats + any dynamic bars), each with its exact {@code fillPct}. */
         public BarsReadResult read() {
             return t.request("GET", "/api/bars", null, BarsReadResult.class);
+        }
+
+        /** Read one bar by stat alias ({@code "hp"}) or name; {@code null} if it is not on screen. */
+        public Bar read(String name) {
+            BarsReadResult all = read();
+            String want = aliasBar(name);
+            if (all != null && all.getBars() != null) {
+                for (Bar b : all.getBars()) {
+                    if (want != null && want.equals(b.getName())) return b;
+                }
+            }
+            return null;
+        }
+
+        /** The dynamic-bar friendly-name registry (combo -&gt; name). GET /api/bars/names. */
+        public JsonNode names() {
+            return t.requestJson("GET", "/api/bars/names", null);
+        }
+
+        /** Name (or, with an empty name, un-name) a dynamic bar combo. POST /api/bars/name. */
+        public JsonNode name(String combo, String name) {
+            return t.requestJson("POST", "/api/bars/name", map("combo", combo, "name", name));
+        }
+    }
+
+    /** Map a friendly stat alias to its canonical bar name (else the name as-is). */
+    private static String aliasBar(String n) {
+        if (n == null) return null;
+        switch (n.toLowerCase()) {
+            case "hp": case "hitpoints": return "hitpoints";
+            case "pray": case "prayer": return "prayer";
+            case "adren": case "adrenaline": return "adrenaline";
+            case "summ": case "summoning": return "summoning";
+            default: return n;
+        }
+    }
+
+    // ── Buffs / debuffs ──
+    /**
+     * Buff/debuff reader. {@code buffs} and {@code debuffs} come back as separate
+     * lists of the same {@code Buff} shape (the {@code kind} field tells them
+     * apart). Each cell's {@code name} is resolved from its icon's colour
+     * signature; train an unnamed icon via {@link Buffs#name(Object, String)}.
+     */
+    public final class Buffs {
+        /** Read all active buffs + debuffs (separate lists, same {@code Buff} shape). */
+        public BuffsReadResult read() {
+            return t.request("GET", "/api/buffs", null, BuffsReadResult.class);
+        }
+
+        /** Read one buff/debuff by name ({@code "buff:necrosis"} or just {@code "necrosis"}); {@code null} if not active. */
+        public Buff read(String name) {
+            BuffsReadResult all = read();
+            if (all == null || name == null) return null;
+            String want = bareName(name);
+            for (List<Buff> list : java.util.Arrays.asList(all.getBuffs(), all.getDebuffs())) {
+                if (list == null) continue;
+                for (Buff b : list) {
+                    if (b.getName() != null && bareName(b.getName()).equals(want)) return b;
+                }
+            }
+            return null;
+        }
+
+        /** The buff/debuff icon-name registry (iconColorHash -&gt; name). GET /api/buffs/names. */
+        public JsonNode names() {
+            return t.requestJson("GET", "/api/buffs/names", null);
+        }
+
+        /** Name (or, with an empty name, un-name) an icon by its {@code iconColorHash}. POST /api/buffs/name. */
+        public JsonNode name(Object iconColorHash, String name) {
+            return t.requestJson("POST", "/api/buffs/name", map("colorHash", iconColorHash, "name", name));
+        }
+    }
+
+    /** Strip an optional sprite prefix and lower-case: "buff:necrosis" -&gt; "necrosis". */
+    private static String bareName(String n) {
+        if (n == null) return null;
+        int i = n.indexOf(':');
+        return (i >= 0 ? n.substring(i + 1) : n).toLowerCase();
+    }
+
+    // ── Skills ──
+    /**
+     * Skills-interface reader. Each {@code Skill} carries its current
+     * {@code level} and {@code base} (trained) level; {@code Skill.getName()} is
+     * one of the RS3 skill names.
+     */
+    public final class Skills {
+        /** Read every skill currently on screen (each with current {@code level} + {@code base}). */
+        public SkillsReadResult read() {
+            return t.request("GET", "/api/skills", null, SkillsReadResult.class);
+        }
+
+        /** Read one skill by name ({@code "attack"}, {@code "herblore"}, …); {@code null} if not on screen. */
+        public Skill read(String name) {
+            SkillsReadResult all = read();
+            if (all == null || name == null || all.getSkills() == null) return null;
+            String want = name.toLowerCase();
+            for (Skill s : all.getSkills()) {
+                if (s.getName() != null && s.getName().toLowerCase().equals(want)) return s;
+            }
+            return null;
         }
     }
 
@@ -322,7 +443,12 @@ public final class RS3Buddy {
      * {@code name} you registered). The {@link ProgressReadResult} carries the
      * raw {@code bars}, a per-type {@code groups} aggregate (flicker-proof
      * {@code stableCount} + each fill %), and per-type {@code began}/{@code ended}.
+     *
+     * @deprecated Dynamic bars are now part of the unified {@link Bars} namespace —
+     *     they appear in {@code bars.read()} alongside the stat bars (same
+     *     {@code Bar} shape). Kept for back-compat; prefer {@code buddy.bars}.
      */
+    @Deprecated
     public final class Progress {
         /** Detect every progress bar on screen. */
         public ProgressReadResult read() {

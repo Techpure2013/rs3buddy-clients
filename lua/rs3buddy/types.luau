@@ -226,20 +226,21 @@ export type BarsReadResult = {
 	ok: boolean,
 	stale: boolean,
 	ageMs: number,
-	bars: {BarValue},
+	bars: {Bar},
+	began: {string},
+	ended: {string},
 }
 
-export type BarValue = {
-	name: BarName,
+export type Bar = {
+	name: string,
+	combo: any,
 	found: boolean,
+	fillPct: any,
 	value: any,
 	max: any,
-	text: string,
-	anchor: any,
-	region: any,
+	text: any,
+	rect: any,
 }
-
-export type BarName = "hitpoints" | "adrenaline" | "prayer" | "summoning"
 
 export type BarRect = {
 	x: number,
@@ -248,12 +249,52 @@ export type BarRect = {
 	h: number,
 }
 
-export type BarBox = {
-	x0: number,
-	y0: number,
-	x1: number,
-	y1: number,
+export type BuffsReadResult = {
+	ok: boolean,
+	stale: boolean,
+	ageMs: number,
+	buffs: {Buff},
+	debuffs: {Buff},
 }
+
+export type Buff = {
+	kind: "buff" | "debuff",
+	name: any,
+	iconColorHash: any,
+	value: any,
+	text: any,
+	rect: BuffRect,
+}
+
+export type BuffRect = {
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+}
+
+export type SkillsReadResult = {
+	ok: boolean,
+	stale: boolean,
+	ageMs: number,
+	skills: {Skill},
+}
+
+export type Skill = {
+	name: string,
+	level: any,
+	base: any,
+	rect: SkillRect,
+}
+
+export type SkillRect = {
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+}
+
+export type SkillName = "attack" | "defence" | "strength" | "constitution" | "ranged" | "prayer" | "magic" | "cooking" | "woodcutting" | "fletching" | "fishing" | "firemaking" | "crafting" | "smithing" | "mining" | "herblore" | "agility" | "thieving" | "slayer" | "farming" | "runecrafting" | "hunter" | "construction" | "summoning" | "dungeoneering" | "divination" | "invention" | "archaeology" | "necromancy"
 
 export type AbilitiesReadResult = {
 	ok: boolean,
@@ -297,6 +338,7 @@ export type ProgressBar = {
 	x: number,
 	y: number,
 	w: number,
+	h: number,
 	percent: number,
 	confident: boolean,
 }
